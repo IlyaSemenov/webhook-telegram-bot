@@ -57,10 +57,13 @@ ngrok http 8080
 Create a `.env` file in the root directory of the project based on the `.env.example` file:
 
 ```
-TELEGRAM_BOT_TOKEN=your_telegram_bot_token
+GITHUB_TELEGRAM_BOT_TOKEN=your_github_telegram_bot_token
+GITLAB_TELEGRAM_BOT_TOKEN=your_gitlab_telegram_bot_token
 SECRET_KEY=your_random_secret_key
 BASE_URL=https://your-tunnel-url  # Use the URL from your tunnel
 ```
+
+Set the token of at least one bot; a connector without a token is disabled.
 
 To generate a random secret key:
 
@@ -91,7 +94,7 @@ If you encounter errors about missing dependencies or `go.sum` entries, run `go 
 ## Step 6: Test the Bot
 
 1. Add your bot to a Telegram group or send a direct message to it
-2. Use the `/github` or `/gitlab` command to get a unique webhook URL
+2. Use the `/webhook` command to get a unique webhook URL
 3. Add this URL to your repository's webhook settings for testing
 
 ## Debugging
@@ -106,6 +109,6 @@ If you're having issues with webhooks, check:
 
 ## Local Development Tips
 
-- Changes to the code require restarting the bot
+- `make run` does not reload code changes; restart it or use `make dev`
 - You can use `go run ./cmd/bot` with the Go debugger for step-by-step debugging
 - Keep your tunnel running in a separate terminal window while developing

@@ -68,8 +68,8 @@ This command will:
 
 1. Add your bot to a Telegram group
 2. Use the `/start` command to initialize the bot
-3. Use `/github` or `/gitlab` to get your webhook URLs
-4. Add these URLs to your repository's webhook settings
+3. Use `/webhook` to get your webhook URL
+4. Add this URL to your repository's webhook settings
 
 ## Updating the Bot
 
