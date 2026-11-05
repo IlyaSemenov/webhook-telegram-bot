@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"git-telegram-bot/internal/services/gitlab"
-	telegramBase "git-telegram-bot/internal/services/telegram"
-	telegram "git-telegram-bot/internal/services/telegram/gitlab"
+	"webhook-telegram-bot/internal/services/gitlab"
+	telegramBase "webhook-telegram-bot/internal/services/telegram"
+	telegram "webhook-telegram-bot/internal/services/telegram/gitlab"
 
 	"github.com/gorilla/mux"
 )

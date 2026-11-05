@@ -1,6 +1,6 @@
 output "lambda_function_url" {
   description = "URL of the Lambda function (or CloudFront URL if custom domain is used)"
-  value       = local.use_custom_domain ? "https://${var.custom_domain}" : aws_lambda_function_url.git_telegram_bot_url.function_url
+  value       = local.use_custom_domain ? "https://${var.custom_domain}" : aws_lambda_function_url.webhook_telegram_bot_url.function_url
 }
 
 output "cloudwatch_log_group" {

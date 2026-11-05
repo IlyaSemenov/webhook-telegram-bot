@@ -1,6 +1,6 @@
 # Deploying to AWS Lambda with Terraform
 
-This guide explains how to deploy the Git-Telegram Bot to AWS Lambda using Terraform.
+This guide explains how to deploy the Webhook-Telegram Bot to AWS Lambda using Terraform.
 
 > Heads up! AWS Lambda connectivity to Telegram servers turned to be unstable.
 > The reference bots now run on a self-hosted Docker server.

@@ -2,13 +2,13 @@
 # IAM User for GitHub Actions (only for production)
 resource "aws_iam_user" "github_actions" {
   count = terraform.workspace == "default" ? 1 : 0
-  name  = "github-actions-git-telegram-bot"
+  name  = "github-actions-webhook-telegram-bot"
 }
 
 # IAM Policy for GitHub Actions (only for production)
 resource "aws_iam_policy" "github_actions_policy" {
   count       = terraform.workspace == "default" ? 1 : 0
-  name        = "github-actions-git-telegram-bot-policy"
+  name        = "github-actions-webhook-telegram-bot-policy"
   description = "Policy for GitHub Actions to update Lambda code"
 
   policy = jsonencode({
@@ -21,7 +21,7 @@ resource "aws_iam_policy" "github_actions_policy" {
           "lambda:GetFunction",
           "lambda:GetFunctionUrlConfig"
         ]
-        Resource = aws_lambda_function.git_telegram_bot.arn
+        Resource = aws_lambda_function.webhook_telegram_bot.arn
       }
     ]
   })

@@ -1,5 +1,5 @@
 locals {
-  function_name     = terraform.workspace == "default" ? "git-telegram-bot" : "git-telegram-bot-${terraform.workspace}"
+  function_name     = terraform.workspace == "default" ? "webhook-telegram-bot" : "webhook-telegram-bot-${terraform.workspace}"
   use_custom_domain = var.custom_domain != ""
 }
 
@@ -60,7 +60,7 @@ resource "aws_iam_role_policy_attachment" "lambda_url" {
 data "aws_caller_identity" "current" {}
 
 # Lambda function
-resource "aws_lambda_function" "git_telegram_bot" {
+resource "aws_lambda_function" "webhook_telegram_bot" {
   function_name = local.function_name
   role          = aws_iam_role.lambda_role.arn
   handler       = "bootstrap"
@@ -87,8 +87,8 @@ resource "aws_lambda_function" "git_telegram_bot" {
 }
 
 # Lambda function URL
-resource "aws_lambda_function_url" "git_telegram_bot_url" {
-  function_name      = aws_lambda_function.git_telegram_bot.function_name
+resource "aws_lambda_function_url" "webhook_telegram_bot_url" {
+  function_name      = aws_lambda_function.webhook_telegram_bot.function_name
   authorization_type = "NONE"
   invoke_mode        = "BUFFERED"
 }
@@ -97,7 +97,7 @@ resource "aws_lambda_function_url" "git_telegram_bot_url" {
 resource "aws_lambda_permission" "function_url_permission" {
   statement_id  = "FunctionURLAllowPublicAccess"
   action        = "lambda:InvokeFunctionUrl"
-  function_name = aws_lambda_function.git_telegram_bot.function_name
+  function_name = aws_lambda_function.webhook_telegram_bot.function_name
   principal     = "*"
   source_arn    = null
 

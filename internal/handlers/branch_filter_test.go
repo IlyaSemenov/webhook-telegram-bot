@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	githubService "git-telegram-bot/internal/services/github"
-	gitlabService "git-telegram-bot/internal/services/gitlab"
+	githubService "webhook-telegram-bot/internal/services/github"
+	gitlabService "webhook-telegram-bot/internal/services/gitlab"
 
 	"github.com/gorilla/mux"
 )

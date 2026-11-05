@@ -6,7 +6,7 @@ import (
 	"io"
 	"strings"
 
-	"git-telegram-bot/internal/config"
+	"webhook-telegram-bot/internal/config"
 
 	"gocloud.dev/docstore"
 	// Import all docstore drivers once for the entire package

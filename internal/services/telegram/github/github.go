@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"html"
 
-	"git-telegram-bot/internal/config"
-	"git-telegram-bot/internal/services/telegram"
-	"git-telegram-bot/internal/storage"
+	"webhook-telegram-bot/internal/config"
+	"webhook-telegram-bot/internal/services/telegram"
+	"webhook-telegram-bot/internal/storage"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"

@@ -1,6 +1,6 @@
 # Running Locally
 
-This guide explains how to run the Git-Telegram Bot locally for development and testing.
+This guide explains how to run the Webhook-Telegram Bot locally for development and testing.
 
 ## Prerequisites
 

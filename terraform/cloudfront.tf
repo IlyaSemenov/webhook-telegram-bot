@@ -43,7 +43,7 @@ resource "aws_cloudfront_distribution" "distribution" {
 
   origin {
     # Use the Lambda function URL as the origin
-    domain_name = trimsuffix(trimprefix(aws_lambda_function_url.git_telegram_bot_url.function_url, "https://"), "/")
+    domain_name = trimsuffix(trimprefix(aws_lambda_function_url.webhook_telegram_bot_url.function_url, "https://"), "/")
     origin_id   = "LambdaOrigin"
 
     custom_origin_config {

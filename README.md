@@ -1,4 +1,4 @@
-# Git-Telegram Bot
+# Webhook-Telegram Bot
 
 A Telegram bot that delivers GitHub and GitLab webhook events to Telegram chats.
 

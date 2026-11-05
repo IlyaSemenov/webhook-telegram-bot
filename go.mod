@@ -1,4 +1,4 @@
-module git-telegram-bot
+module webhook-telegram-bot
 
 go 1.25.0
 

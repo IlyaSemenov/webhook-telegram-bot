@@ -6,13 +6,13 @@ import (
 	"log"
 	"net/http"
 
-	"git-telegram-bot/internal/config"
-	"git-telegram-bot/internal/handlers"
-	"git-telegram-bot/internal/services/github"
-	"git-telegram-bot/internal/services/gitlab"
-	telegramGithub "git-telegram-bot/internal/services/telegram/github"
-	telegramGitlab "git-telegram-bot/internal/services/telegram/gitlab"
-	"git-telegram-bot/internal/storage"
+	"webhook-telegram-bot/internal/config"
+	"webhook-telegram-bot/internal/handlers"
+	"webhook-telegram-bot/internal/services/github"
+	"webhook-telegram-bot/internal/services/gitlab"
+	telegramGithub "webhook-telegram-bot/internal/services/telegram/github"
+	telegramGitlab "webhook-telegram-bot/internal/services/telegram/gitlab"
+	"webhook-telegram-bot/internal/storage"
 
 	"github.com/gorilla/mux"
 )

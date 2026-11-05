@@ -9,7 +9,7 @@ dokku plugin:install https://github.com/dokku/dokku-mongo.git
 ```
 
 ```sh
-APP=git-telegram-bot
+APP=webhook-telegram-bot
 dokku apps:create $APP
 
 dokku mongo:create $APP

@@ -2,7 +2,7 @@
 
 # Environment variable defaults
 ENV ?= prod
-FUNCTION_NAME = $(if $(filter prod,$(ENV)),git-telegram-bot,git-telegram-bot-$(ENV))
+FUNCTION_NAME = $(if $(filter prod,$(ENV)),webhook-telegram-bot,webhook-telegram-bot-$(ENV))
 TF_WORKSPACE="$(if $(filter prod,$(ENV)),default,$(ENV))"
 
 # Build the application

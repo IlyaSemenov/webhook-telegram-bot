@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strings"
 
-	"git-telegram-bot/internal/services/telegram"
+	"webhook-telegram-bot/internal/services/telegram"
 )
 
 func (s *GitLabService) handlePushEvent(chatID int64, payload []byte, branchFilters []string, includeProject bool) error {
