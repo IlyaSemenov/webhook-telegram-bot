@@ -4,9 +4,11 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"strings"
 
 	"webhook-telegram-bot/internal/storage"
@@ -28,6 +30,23 @@ type TelegramService struct {
 	chatStorage        *storage.ChatStorage
 	baseURL            string
 	webhookSecretToken string
+}
+
+// botTokenPattern matches the bot token in a Telegram API URL, which the errors of the Telegram client quote.
+var botTokenPattern = regexp.MustCompile(`/bot[^/"\s]+`)
+
+// redactBotToken returns err without the bot token, so that the error is safe to log.
+func redactBotToken(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	message := err.Error()
+	redacted := botTokenPattern.ReplaceAllString(message, "/bot***")
+	if redacted == message {
+		return err
+	}
+	return errors.New(redacted)
 }
 
 func createWebhookSecretToken(secretKey string) string {
@@ -90,7 +109,7 @@ func (s *TelegramService) InitBot() error {
 	ctx := context.Background()
 	me, err := s.bot.GetMe(ctx)
 	if err != nil {
-		return fmt.Errorf("Failed to get bot info for %s: %w", s.botId, err)
+		return fmt.Errorf("Failed to get bot info for %s: %w", s.botId, redactBotToken(err))
 	}
 
 	log.Printf("Init %s bot @%s", s.botId, me.Username)
@@ -114,7 +133,7 @@ func (s *TelegramService) SetWebhook(webhookURL string) error {
 		SecretToken: s.webhookSecretToken,
 	}
 	_, err := s.bot.SetWebhook(ctx, params)
-	return err
+	return redactBotToken(err)
 }
 
 func (s *TelegramService) WebhookHandler() http.HandlerFunc {
@@ -142,7 +161,7 @@ func (s *TelegramService) SetCommands(commands []models.BotCommand) {
 	}
 	_, err := s.bot.SetMyCommands(ctx, params)
 	if err != nil {
-		log.Printf("Failed to set commands for %s bot: %v", s.botId, err)
+		log.Printf("Failed to set commands for %s bot: %v", s.botId, redactBotToken(err))
 	}
 }
 
@@ -154,7 +173,7 @@ func (s *TelegramService) SetWhatCanThisBotDo(description string) {
 	}
 	_, err := s.bot.SetMyDescription(ctx, params)
 	if err != nil {
-		log.Printf("Failed to set profile description for %s bot: %v", s.botId, err)
+		log.Printf("Failed to set profile description for %s bot: %v", s.botId, redactBotToken(err))
 	}
 }
 
@@ -166,7 +185,7 @@ func (s *TelegramService) SetProfileDescription(description string) {
 	}
 	_, err := s.bot.SetMyShortDescription(ctx, params)
 	if err != nil {
-		log.Printf("Failed to set short description for %s bot: %v", s.botId, err)
+		log.Printf("Failed to set short description for %s bot: %v", s.botId, redactBotToken(err))
 	}
 }
 
@@ -195,6 +214,7 @@ func (s *TelegramService) SendMessageWithResult(chatID int64, text string) (*mod
 	}
 
 	msg, err := s.bot.SendMessage(ctx, params)
+	err = redactBotToken(err)
 
 	// Update chat status based on delivery result
 	chat := &storage.Chat{
@@ -230,7 +250,7 @@ func (s *TelegramService) UpdateMessage(chatID int64, messageID int, text string
 	}
 
 	_, err := s.bot.EditMessageText(ctx, params)
-	return err
+	return redactBotToken(err)
 }
 
 // isBotBlockedError checks if the error indicates the bot was blocked or removed
