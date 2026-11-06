@@ -72,7 +72,7 @@ This command will:
 1. Add your bot to a Telegram group
 2. Use the `/start` command to initialize the bot
 3. Use `/webhook` to get your webhook URL
-4. Add this URL to your repository's webhook settings, or to a Sentry internal integration as described in [Sentry Setup](../README.md#sentry-setup)
+4. Add this URL to your repository's webhook settings, or to a Sentry internal integration as described in [Sentry](../README.md#sentry)
 
 ## Updating the Bot
 

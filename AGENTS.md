@@ -37,7 +37,7 @@ Besides the connector itself, update:
 - `cmd/all/main.go` and a new `cmd/<source>/main.go`.
 - `.env.example`, `terraform/variables.tf`, `terraform/terraform.tfvars.example`, and the Lambda environment in `terraform/lambda.tf`.
 - The header whitelist in `terraform/cloudfront.tf`, or the source's event headers will not reach the bot.
-- `README.md`.
+- A section in `README.md`.
 
 ## Runtime and deployment
 
