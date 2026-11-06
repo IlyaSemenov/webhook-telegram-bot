@@ -44,7 +44,7 @@ func NewGitLabTelegramService(ctx context.Context, deps app.Deps) (*GitLabTelegr
 
 var (
 	profileDescription = "Monitors GitLab repo activity via webhooks and sends updates to Telegram."
-	whatCanThisBotDo   = "Generate a GitLub webhook URL, connect it to your repo, and receive events directly in Telegram."
+	whatCanThisBotDo   = "Generate a GitLab webhook URL, connect it to your repo, and receive events directly in Telegram."
 	commands           = []models.BotCommand{
 		{
 			Command:     "start",
