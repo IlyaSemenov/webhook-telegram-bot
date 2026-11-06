@@ -24,6 +24,7 @@ resource "aws_cloudfront_origin_request_policy" "lambda_webhook_headers" {
       items = [
         "x-gitlab-event",
         "x-github-event",
+        "sentry-hook-resource",
         "x-telegram-bot-api-secret-token",
         "content-type",
         "user-agent",

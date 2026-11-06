@@ -16,6 +16,13 @@ variable "gitlab_telegram_bot_token" {
   sensitive   = true
 }
 
+variable "sentry_telegram_bot_token" {
+  description = "Sentry Telegram Bot Token from BotFather (optional, the Sentry bot is disabled without it)"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
 variable "custom_domain" {
   description = "Custom domain name for the bot (optional)"
   type        = string

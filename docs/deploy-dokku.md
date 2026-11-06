@@ -17,6 +17,7 @@ dokku mongo:link $APP $APP
 
 dokku config:set $APP GITHUB_TELEGRAM_BOT_TOKEN=
 dokku config:set $APP GITLAB_TELEGRAM_BOT_TOKEN=
+dokku config:set $APP SENTRY_TELEGRAM_BOT_TOKEN=
 dokku config:set $APP SECRET_KEY=$(openssl rand -hex 32)
 dokku config:set $APP BASE_URL=https://webhook.git-watch.mobicom.dev
 

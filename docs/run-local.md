@@ -59,6 +59,7 @@ Create a `.env` file in the root directory of the project based on the `.env.exa
 ```
 GITHUB_TELEGRAM_BOT_TOKEN=your_github_telegram_bot_token
 GITLAB_TELEGRAM_BOT_TOKEN=your_gitlab_telegram_bot_token
+SENTRY_TELEGRAM_BOT_TOKEN=your_sentry_telegram_bot_token
 SECRET_KEY=your_random_secret_key
 BASE_URL=https://your-tunnel-url  # Use the URL from your tunnel
 ```
@@ -102,7 +103,7 @@ If you encounter errors about missing dependencies or `go.sum` entries, run `go 
 
 1. Add your bot to a Telegram group or send a direct message to it
 2. Use the `/webhook` command to get a unique webhook URL
-3. Add this URL to your repository's webhook settings for testing
+3. Add this URL to your repository's webhook settings or to a Sentry internal integration for testing
 
 ## Debugging
 
@@ -112,7 +113,7 @@ If you're having issues with webhooks, check:
 
 1. The tunnel console for incoming requests
 2. The bot's console output for any errors
-3. GitHub/GitLab's webhook delivery page for request/response details
+3. GitHub/GitLab's webhook delivery page or the Sentry integration's dashboard for request/response details
 
 ## Local Development Tips
 

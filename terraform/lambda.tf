@@ -75,6 +75,7 @@ resource "aws_lambda_function" "webhook_telegram_bot" {
     variables = {
       GITHUB_TELEGRAM_BOT_TOKEN = var.github_telegram_bot_token
       GITLAB_TELEGRAM_BOT_TOKEN = var.gitlab_telegram_bot_token
+      SENTRY_TELEGRAM_BOT_TOKEN = var.sentry_telegram_bot_token
       SECRET_KEY                = random_password.secret_key.result
       # Set BASE_URL to the custom domain if it's being used
       BASE_URL = local.use_custom_domain ? "https://${var.custom_domain}" : null

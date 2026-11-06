@@ -1,6 +1,7 @@
 # Telegram Bot Tokens (get from @BotFather)
 github_telegram_bot_token = ""
 gitlab_telegram_bot_token = ""
+sentry_telegram_bot_token = "" # Optional, the Sentry bot is disabled without it
 
 # Custom domain name (optional)
 # custom_domain = "webhook.git-watch.mobicom.dev"
