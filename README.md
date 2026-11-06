@@ -29,6 +29,8 @@ GitHub then sends a ping, and the chat receives a confirmation message.
 - Push: author, branch, and commits, or a force push or branch deletion notice
 - Completed workflow run: workflow link and result
 
+Skipped workflow runs send no message.
+
 ### URL Parameters
 
 Add query parameters to the webhook URL and combine them as needed:

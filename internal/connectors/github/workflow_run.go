@@ -33,6 +33,11 @@ func (s *GitHubService) handleWorkflowRunEvent(chatID int64, payload []byte, bra
 		return nil
 	}
 
+	// A skipped run did nothing, so there is nothing to report
+	if event.WorkflowRun.Conclusion == "skipped" {
+		return nil
+	}
+
 	// If none of the branch filters match the workflow run's branch, skip this event
 	if len(branchFilters) > 0 && !slices.Contains(branchFilters, event.WorkflowRun.HeadBranch) {
 		return nil
