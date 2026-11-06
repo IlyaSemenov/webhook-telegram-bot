@@ -2,8 +2,8 @@ package main
 
 import (
 	"webhook-telegram-bot/internal/app"
-	"webhook-telegram-bot/internal/github"
-	"webhook-telegram-bot/internal/gitlab"
+	"webhook-telegram-bot/internal/connectors/github"
+	"webhook-telegram-bot/internal/connectors/gitlab"
 )
 
 func main() {

@@ -15,10 +15,10 @@ Each source, such as GitHub or GitLab, is a connector and a separate Telegram bo
 
 A connector consists of:
 
-- `internal/<source>/connector.go`: the token variable, the bot constructor, and the routes.
-- `internal/<source>/handler.go`: the `POST /<source>/{chatID}` endpoint that parses the request.
-- `internal/<source>/bot.go`: bot commands.
-- Event parsing and message formatting also live in `internal/<source>/`.
+- `internal/connectors/<source>/connector.go`: the token variable, the bot constructor, and the routes.
+- `internal/connectors/<source>/handler.go`: the `POST /<source>/{chatID}` endpoint that parses the request.
+- `internal/connectors/<source>/bot.go`: bot commands.
+- Event parsing and message formatting also live in `internal/connectors/<source>/`.
 
 Follow these boundaries:
 
