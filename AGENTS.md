@@ -15,13 +15,14 @@ Each source, such as GitHub or GitLab, is a connector and a separate Telegram bo
 
 A connector consists of:
 
+- `internal/<source>/connector.go`: the token variable, the bot constructor, and the routes.
 - `internal/<source>/handler.go`: the `POST /<source>/{chatID}` endpoint that parses the request.
-- `internal/<source>/bot.go`: bot commands and `/telegram/webhook/<source>`.
+- `internal/<source>/bot.go`: bot commands.
 - Event parsing and message formatting also live in `internal/<source>/`.
 
 Follow these boundaries:
 
-- Do not import one connector from another.
+- Do not import one connector from another; only `cmd/` composes connectors.
   Move code that several connectors really share to `internal/telegram/`.
 - Keep source-specific concepts, such as branch filters, out of shared contracts.
   Each handler parses its own query parameters.
@@ -33,7 +34,7 @@ Follow these boundaries:
 
 Besides the connector itself, update:
 
-- `internal/server/server.go` and the token check in `internal/config/config.go`.
+- `cmd/bot/main.go`.
 - `.env.example`, `terraform/variables.tf`, `terraform/terraform.tfvars.sample`, and the Lambda environment in `terraform/lambda.tf`.
 - The header whitelist in `terraform/cloudfront.tf`, or the source's event headers will not reach the bot.
 - `README.md`.

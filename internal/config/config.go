@@ -16,8 +16,6 @@ import (
 // Config holds the deployment settings read from the environment.
 type Config struct {
 	ListenAddress               string
-	GitHubTelegramBotToken      string
-	GitLabTelegramBotToken      string
 	SecretKey                   string
 	BaseURL                     string
 	IsLambda                    bool
@@ -83,13 +81,6 @@ func Load() (*Config, error) {
 	// Ensure BaseURL doesn't end with a slash
 	baseURL = strings.TrimSuffix(baseURL, "/")
 
-	githubTelegramBotToken := os.Getenv("GITHUB_TELEGRAM_BOT_TOKEN")
-	gitlabTelegramBotToken := os.Getenv("GITLAB_TELEGRAM_BOT_TOKEN")
-
-	if githubTelegramBotToken == "" && gitlabTelegramBotToken == "" {
-		return nil, fmt.Errorf("You must provide at least one of the environment variables: GITHUB_TELEGRAM_BOT_TOKEN or GITLAB_TELEGRAM_BOT_TOKEN.")
-	}
-
 	secretKey := os.Getenv("SECRET_KEY")
 	if secretKey == "" {
 		return nil, fmt.Errorf("SECRET_KEY environment variable is missing")
@@ -107,8 +98,6 @@ func Load() (*Config, error) {
 
 	return &Config{
 		ListenAddress:               listenAddress,
-		GitHubTelegramBotToken:      githubTelegramBotToken,
-		GitLabTelegramBotToken:      gitlabTelegramBotToken,
 		SecretKey:                   secretKey,
 		BaseURL:                     baseURL,
 		IsLambda:                    isLambda,

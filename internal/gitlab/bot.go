@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"html"
 
-	"webhook-telegram-bot/internal/storage"
+	"webhook-telegram-bot/internal/app"
 	"webhook-telegram-bot/internal/telegram"
 
 	"github.com/go-telegram/bot"
@@ -19,13 +19,13 @@ type GitLabTelegramService struct {
 }
 
 // NewGitLabTelegramService creates a new GitLab Telegram service
-func NewGitLabTelegramService(ctx context.Context, token string, settings telegram.Settings, store *storage.Store, chatStorage *storage.ChatStorage) (*GitLabTelegramService, error) {
-	s, err := telegram.NewTelegramService("gitlab", token, settings, chatStorage)
-	if s == nil || err != nil {
+func NewGitLabTelegramService(ctx context.Context, deps app.Deps) (*GitLabTelegramService, error) {
+	s, err := telegram.NewTelegramService(botID, deps.Token, deps.Settings, deps.ChatStorage)
+	if err != nil {
 		return nil, err
 	}
 
-	pipelineStorage, err := NewPipelineStorage(ctx, store)
+	pipelineStorage, err := NewPipelineStorage(ctx, deps.Store)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize pipeline storage: %w", err)
 	}

@@ -36,11 +36,6 @@ func createWebhookSecretToken(secretKey string) string {
 
 // NewBTelegramService creates a new Telegram service
 func NewTelegramService(botId string, token string, settings Settings, chatStorage *storage.ChatStorage) (*TelegramService, error) {
-	if token == "" {
-		// Allow to create nil service
-		return nil, nil
-	}
-
 	webhookSecretToken := createWebhookSecretToken(settings.SecretKey)
 
 	opts := []bot.Option{
