@@ -64,6 +64,7 @@ BASE_URL=https://your-tunnel-url  # Use the URL from your tunnel
 ```
 
 Set the token of at least one bot; a connector without a token is disabled.
+All binaries read this file.
 
 To generate a random secret key:
 
@@ -79,9 +80,15 @@ Start the bot in local mode with hot reload:
 make dev
 ```
 
-This will start the bot with hot reload enabled, automatically restarting the server when you make code changes.
+This will start every bot that has a token, with hot reload enabled, automatically restarting the server when you make code changes.
 
-Alternatively, you can run without hot reload:
+To run a single bot, pass its binary:
+
+```bash
+make dev BOT=github
+```
+
+Alternatively, you can run without hot reload, with or without `BOT`:
 
 ```bash
 make run
@@ -110,5 +117,5 @@ If you're having issues with webhooks, check:
 ## Local Development Tips
 
 - `make run` does not reload code changes; restart it or use `make dev`
-- You can use `go run ./cmd/bot` with the Go debugger for step-by-step debugging
+- You can use `go run ./cmd/bot` or `go run ./cmd/github` with the Go debugger for step-by-step debugging
 - Keep your tunnel running in a separate terminal window while developing

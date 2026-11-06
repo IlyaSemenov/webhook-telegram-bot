@@ -91,6 +91,15 @@ This bot is designed with privacy as a core principle. Here’s how data is hand
 
 This is a privacy-focused relay bot that retains only the minimal data required for functionality.
 
+## Builds
+
+The repository builds a binary per bot and a binary that runs several bots in one process:
+
+- `cmd/bot` runs every bot that has a token.
+- `cmd/github` and `cmd/gitlab` run a single bot.
+
+All binaries read the same environment variables, and a bot has the same URLs in any binary.
+
 ## Developer Documentation
 
 - [Running Locally](docs/run-local.md)

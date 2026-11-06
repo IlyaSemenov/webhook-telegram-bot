@@ -23,6 +23,13 @@ dokku config:set $APP BASE_URL=https://webhook.git-watch.mobicom.dev
 dokku domains:set $APP webhook.git-watch.mobicom.dev
 ```
 
+To deploy a single bot as its own app, use a separate `APP`, domain, and `BASE_URL` in the commands above, and set only that bot's token.
+Before the first push, select its binary:
+
+```sh
+dokku docker-options:add $APP build '--build-arg BOT=github'
+```
+
 Locally:
 
 ```sh

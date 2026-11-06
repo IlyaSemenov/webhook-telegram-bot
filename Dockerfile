@@ -1,6 +1,9 @@
 # Build stage
 FROM golang:1.25-alpine3.22 AS builder
 
+# The cmd/ directory to build
+ARG BOT=bot
+
 WORKDIR /app
 
 # Copy go mod files
@@ -17,7 +20,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags='-w -s -extldflags "-static"' \
     -o bot \
-    ./cmd/bot
+    ./cmd/${BOT}
 
 # Runner stage
 FROM alpine:3.22 AS runner

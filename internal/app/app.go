@@ -99,7 +99,7 @@ func createBots(ctx context.Context, cfg *config.Config, connectors []Connector)
 		}
 	}
 	if len(tokens) == 0 {
-		return nil, fmt.Errorf("You must provide at least one of the environment variables: %s.", strings.Join(tokenEnvs, " or "))
+		return nil, fmt.Errorf("Missing Telegram bot token: set %s.", strings.Join(tokenEnvs, " or "))
 	}
 
 	store := storage.NewStore(cfg.StorageConnectionStringBase)

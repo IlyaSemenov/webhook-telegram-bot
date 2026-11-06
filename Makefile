@@ -2,12 +2,14 @@
 
 # Environment variable defaults
 ENV ?= prod
+# The cmd/ directory to build and run
+BOT ?= bot
 FUNCTION_NAME = $(if $(filter prod,$(ENV)),webhook-telegram-bot,webhook-telegram-bot-$(ENV))
 TF_WORKSPACE="$(if $(filter prod,$(ENV)),default,$(ENV))"
 
 # Build the application
 build:
-	go build -o bin/bot ./cmd/bot
+	go build -o bin/$(BOT) ./cmd/$(BOT)
 
 # Clean build artifacts
 clean:
@@ -57,11 +59,11 @@ lint:
 
 # Run locally
 run:
-	go run ./cmd/bot
+	go run ./cmd/$(BOT)
 
 # Run with hot reload
 dev:
-	air -c .air.toml
+	air -c .air.toml --build.cmd "go build -o ./tmp/$(BOT) ./cmd/$(BOT)" --build.entrypoint "./tmp/$(BOT)"
 
 # Run tests
 test:
