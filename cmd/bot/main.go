@@ -13,25 +13,26 @@ import (
 )
 
 var (
+	cfg        *config.Config
 	srv        *server.Server
 	muxAdapter *muxadapter.GorillaMuxAdapterV2
 )
 
 func init() {
-	// Initialize global configuration
-	if err := config.Initialize(); err != nil {
-		log.Fatalf("Failed to initialize configuration: %v", err)
+	var err error
+	cfg, err = config.Load()
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
 	// Create server
-	var err error
-	srv, err = server.New()
+	srv, err = server.New(cfg)
 	if err != nil {
 		log.Fatalf("Failed to create server: %v", err)
 	}
 
 	// Create Lambda adapter if in Lambda mode
-	if config.Global.IsLambda {
+	if cfg.IsLambda {
 		muxAdapter = muxadapter.NewV2(srv.Router())
 	} else {
 		// Start HTTP server for local development
@@ -48,7 +49,7 @@ func lambdaHandler(ctx context.Context, req events.APIGatewayV2HTTPRequest) (eve
 }
 
 func main() {
-	if config.Global.IsLambda {
+	if cfg.IsLambda {
 		// Start Lambda handler
 		lambda.Start(lambdaHandler)
 	} else {

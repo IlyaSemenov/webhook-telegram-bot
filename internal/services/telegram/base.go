@@ -9,44 +9,46 @@ import (
 	"net/http"
 	"strings"
 
-	"webhook-telegram-bot/internal/config"
 	"webhook-telegram-bot/internal/storage"
 
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 )
 
-// TelegramService provides common functionality for Telegram bots
-type TelegramService struct {
-	botId       string // Internal bot ID (github or gitlab)
-	bot         *bot.Bot
-	chatStorage *storage.ChatStorage
+// Settings holds the deployment settings shared by all Telegram bots.
+type Settings struct {
+	BaseURL   string
+	SecretKey string
 }
 
-var (
+// TelegramService provides common functionality for Telegram bots
+type TelegramService struct {
+	botId              string // Internal bot ID (github or gitlab)
+	bot                *bot.Bot
+	chatStorage        *storage.ChatStorage
+	baseURL            string
 	webhookSecretToken string
-)
+}
 
-func getWebhookSecretToken() string {
-	if webhookSecretToken == "" {
-		webhookSecretToken = fmt.Sprintf("%x", sha256.Sum256(fmt.Appendf(nil, "%s:%s", config.Global.SecretKey, "telegram")))
-	}
-	return webhookSecretToken
+func createWebhookSecretToken(secretKey string) string {
+	return fmt.Sprintf("%x", sha256.Sum256(fmt.Appendf(nil, "%s:%s", secretKey, "telegram")))
 }
 
 // NewBTelegramService creates a new Telegram service
-func NewTelegramService(botId string, token string, storageInstance *storage.Storage) (*TelegramService, error) {
+func NewTelegramService(botId string, token string, settings Settings, chatStorage *storage.ChatStorage) (*TelegramService, error) {
 	if token == "" {
 		// Allow to create nil service
 		return nil, nil
 	}
+
+	webhookSecretToken := createWebhookSecretToken(settings.SecretKey)
 
 	opts := []bot.Option{
 		bot.WithSkipGetMe(), // We'll call getMe manually during Init
 		bot.WithDefaultHandler(func(ctx context.Context, bot *bot.Bot, update *models.Update) {
 			// Do nothing. The default implementation logs all unhandled update.
 		}),
-		bot.WithWebhookSecretToken(getWebhookSecretToken()),
+		bot.WithWebhookSecretToken(webhookSecretToken),
 	}
 
 	botInstance, err := bot.New(token, opts...)
@@ -55,9 +57,11 @@ func NewTelegramService(botId string, token string, storageInstance *storage.Sto
 	}
 
 	return &TelegramService{
-		bot:         botInstance,
-		botId:       botId,
-		chatStorage: storageInstance.ChatStorage,
+		bot:                botInstance,
+		botId:              botId,
+		chatStorage:        chatStorage,
+		baseURL:            settings.BaseURL,
+		webhookSecretToken: webhookSecretToken,
 	}, nil
 }
 
@@ -97,7 +101,7 @@ func (s *TelegramService) InitBot() error {
 	log.Printf("Init %s bot @%s", s.botId, me.Username)
 
 	// Set up webhook
-	webhookURL := config.Global.BaseURL + "/telegram/webhook/" + s.botId
+	webhookURL := s.baseURL + "/telegram/webhook/" + s.botId
 	if err := s.SetWebhook(webhookURL); err != nil {
 		return fmt.Errorf("Failed to set up %s bot webhook at %s: %w", s.botId, webhookURL, err)
 	} else {
@@ -112,7 +116,7 @@ func (s *TelegramService) SetWebhook(webhookURL string) error {
 	ctx := context.Background()
 	params := &bot.SetWebhookParams{
 		URL:         webhookURL,
-		SecretToken: getWebhookSecretToken(),
+		SecretToken: s.webhookSecretToken,
 	}
 	_, err := s.bot.SetWebhook(ctx, params)
 	return err
@@ -132,7 +136,7 @@ func (s *TelegramService) WebhookHandler() http.HandlerFunc {
 }
 
 func (s *TelegramService) GetChatWebhookURL(chatID int64) string {
-	return fmt.Sprintf("%s/%s/%d", config.Global.BaseURL, s.botId, chatID)
+	return fmt.Sprintf("%s/%s/%d", s.baseURL, s.botId, chatID)
 }
 
 // SetCommands sets the list of available commands for the bot

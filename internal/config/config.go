@@ -13,9 +13,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Global configuration instance
-var Global *Config
-
+// Config holds the deployment settings read from the environment.
 type Config struct {
 	ListenAddress               string
 	GitHubTelegramBotToken      string
@@ -50,8 +48,8 @@ func GetLambdaURL() (string, error) {
 	return *resp.FunctionUrl, nil
 }
 
-// Initialize loads the configuration and sets the Global variable
-func Initialize() error {
+// Load reads the configuration from the environment and the optional .env file.
+func Load() (*Config, error) {
 	var lambdaFunctionName = os.Getenv("AWS_LAMBDA_FUNCTION_NAME")
 
 	// Check if we're running in Lambda
@@ -77,7 +75,7 @@ func Initialize() error {
 		var err error
 		baseURL, err = GetLambdaURL()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		fmt.Printf("Auto-discovered BASE_URL: %s\n", baseURL)
 	}
@@ -89,12 +87,12 @@ func Initialize() error {
 	gitlabTelegramBotToken := os.Getenv("GITLAB_TELEGRAM_BOT_TOKEN")
 
 	if githubTelegramBotToken == "" && gitlabTelegramBotToken == "" {
-		return fmt.Errorf("You must provide at least one of the environment variables: GITHUB_TELEGRAM_BOT_TOKEN or GITLAB_TELEGRAM_BOT_TOKEN.")
+		return nil, fmt.Errorf("You must provide at least one of the environment variables: GITHUB_TELEGRAM_BOT_TOKEN or GITLAB_TELEGRAM_BOT_TOKEN.")
 	}
 
 	secretKey := os.Getenv("SECRET_KEY")
 	if secretKey == "" {
-		return fmt.Errorf("SECRET_KEY environment variable is missing")
+		return nil, fmt.Errorf("SECRET_KEY environment variable is missing")
 	}
 
 	// Auto-detect storage connection string base
@@ -107,7 +105,7 @@ func Initialize() error {
 		storageConnectionStringBase = fmt.Sprintf("dynamodb://%s", lambdaFunctionName)
 	}
 
-	Global = &Config{
+	return &Config{
 		ListenAddress:               listenAddress,
 		GitHubTelegramBotToken:      githubTelegramBotToken,
 		GitLabTelegramBotToken:      gitlabTelegramBotToken,
@@ -115,9 +113,7 @@ func Initialize() error {
 		BaseURL:                     baseURL,
 		IsLambda:                    isLambda,
 		StorageConnectionStringBase: storageConnectionStringBase,
-	}
-
-	return nil
+	}, nil
 }
 
 // Due to MongoDB driver requirement, we need to set the MONGO_SERVER_URL env var.

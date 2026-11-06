@@ -10,6 +10,7 @@ import (
 	"webhook-telegram-bot/internal/handlers"
 	"webhook-telegram-bot/internal/services/github"
 	"webhook-telegram-bot/internal/services/gitlab"
+	"webhook-telegram-bot/internal/services/telegram"
 	telegramGithub "webhook-telegram-bot/internal/services/telegram/github"
 	telegramGitlab "webhook-telegram-bot/internal/services/telegram/gitlab"
 	"webhook-telegram-bot/internal/storage"
@@ -18,16 +19,22 @@ import (
 )
 
 type Server struct {
-	router *mux.Router
+	router        *mux.Router
+	listenAddress string
 }
 
-func New() (*Server, error) {
+func New(cfg *config.Config) (*Server, error) {
 	ctx := context.Background()
 
-	// Initialize centralized storage
-	storageInstance, err := storage.NewStorage(ctx)
+	store := storage.NewStore(cfg.StorageConnectionStringBase)
+	chatStorage, err := storage.NewChatStorage(ctx, store)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to initialize storage: %w", err)
+		return nil, fmt.Errorf("Failed to initialize chat storage: %w", err)
+	}
+
+	telegramSettings := telegram.Settings{
+		BaseURL:   cfg.BaseURL,
+		SecretKey: cfg.SecretKey,
 	}
 
 	// Set up router
@@ -42,7 +49,7 @@ func New() (*Server, error) {
 	}).Methods("GET")
 
 	// Setup GitHub service
-	githubTelegramSvc, err := telegramGithub.NewGitHubTelegramService(storageInstance)
+	githubTelegramSvc, err := telegramGithub.NewGitHubTelegramService(cfg.GitHubTelegramBotToken, telegramSettings, chatStorage)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initialize GitHub Telegram service: %w", err)
 	}
@@ -58,7 +65,7 @@ func New() (*Server, error) {
 	}
 
 	// Setup GitLab service
-	gitlabTelegramSvc, err := telegramGitlab.NewGitLabTelegramService(storageInstance)
+	gitlabTelegramSvc, err := telegramGitlab.NewGitLabTelegramService(ctx, cfg.GitLabTelegramBotToken, telegramSettings, store, chatStorage)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initialize GitLab Telegram service: %w", err)
 	}
@@ -88,12 +95,12 @@ func New() (*Server, error) {
 		return nil
 	}
 
-	if config.Global.IsLambda {
+	if cfg.IsLambda {
 		// In AWS Lambda, init bots once after deploy (otherwise this runs on every cold start)
 		router.HandleFunc("/init", func(w http.ResponseWriter, r *http.Request) {
 			// Validate secret key from header
 			secretKey := r.Header.Get("secret-key")
-			if secretKey != config.Global.SecretKey {
+			if secretKey != cfg.SecretKey {
 				log.Printf("Invalid secret key provided for init endpoint")
 				w.WriteHeader(http.StatusUnauthorized)
 				if _, writeErr := w.Write([]byte("Unauthorized: Invalid secret key")); writeErr != nil {
@@ -131,7 +138,8 @@ func New() (*Server, error) {
 	}
 
 	return &Server{
-		router: router,
+		router:        router,
+		listenAddress: cfg.ListenAddress,
 	}, nil
 }
 
@@ -140,5 +148,5 @@ func (s *Server) Router() *mux.Router {
 }
 
 func (s *Server) ListenAndServe() error {
-	return http.ListenAndServe(config.Global.ListenAddress, s.router)
+	return http.ListenAndServe(s.listenAddress, s.router)
 }

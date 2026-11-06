@@ -22,8 +22,8 @@ type ChatStorage struct {
 }
 
 // NewChatStorage creates a new chat storage instance
-func NewChatStorage(ctx context.Context) (*ChatStorage, error) {
-	collection, err := openCollection(ctx, "chats", "chat_id", "bot_type")
+func NewChatStorage(ctx context.Context, store *Store) (*ChatStorage, error) {
+	collection, err := store.OpenCollection(ctx, "chats", "chat_id", "bot_type")
 	if err != nil {
 		return nil, err
 	}
@@ -55,12 +55,4 @@ func (s *ChatStorage) SaveChat(ctx context.Context, chat *Chat) error {
 
 func (s *ChatStorage) DeleteChat(ctx context.Context, chat *Chat) error {
 	return s.collection.Delete(ctx, chat)
-}
-
-// Close closes the storage connection
-func (s *ChatStorage) Close() error {
-	if s.collection != nil {
-		return s.collection.Close()
-	}
-	return nil
 }

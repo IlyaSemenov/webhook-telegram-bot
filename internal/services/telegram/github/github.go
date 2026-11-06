@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html"
 
-	"webhook-telegram-bot/internal/config"
 	"webhook-telegram-bot/internal/services/telegram"
 	"webhook-telegram-bot/internal/storage"
 
@@ -17,8 +16,8 @@ type GitHubTelegramService struct {
 	*telegram.TelegramService
 }
 
-func NewGitHubTelegramService(storageInstance *storage.Storage) (*GitHubTelegramService, error) {
-	s, err := telegram.NewTelegramService("github", config.Global.GitHubTelegramBotToken, storageInstance)
+func NewGitHubTelegramService(token string, settings telegram.Settings, chatStorage *storage.ChatStorage) (*GitHubTelegramService, error) {
+	s, err := telegram.NewTelegramService("github", token, settings, chatStorage)
 	if s == nil || err != nil {
 		return nil, err
 	}

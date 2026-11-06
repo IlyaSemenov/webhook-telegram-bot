@@ -1,4 +1,4 @@
-package storage
+package gitlab
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"webhook-telegram-bot/internal/storage"
 
 	"gocloud.dev/docstore"
 	"gocloud.dev/gcerrors"
@@ -26,8 +28,8 @@ type PipelineStorage struct {
 }
 
 // NewPipelineStorage creates a new pipeline storage instance
-func NewPipelineStorage(ctx context.Context) (*PipelineStorage, error) {
-	collection, err := openCollection(ctx, "pipelines", "pipeline_update_key", "")
+func NewPipelineStorage(ctx context.Context, store *storage.Store) (*PipelineStorage, error) {
+	collection, err := store.OpenCollection(ctx, "pipelines", "pipeline_update_key", "")
 	if err != nil {
 		return nil, err
 	}
@@ -118,12 +120,4 @@ func (s *PipelineStorage) GetPipeline(ctx context.Context, pipelineUpdateKey str
 		// Other Get errors
 		return nil, err
 	}
-}
-
-// Close closes the storage connection
-func (s *PipelineStorage) Close() error {
-	if s.collection != nil {
-		return s.collection.Close()
-	}
-	return nil
 }

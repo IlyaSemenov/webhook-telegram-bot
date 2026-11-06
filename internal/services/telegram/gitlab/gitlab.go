@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"html"
 
-	"webhook-telegram-bot/internal/config"
 	"webhook-telegram-bot/internal/services/telegram"
 	"webhook-telegram-bot/internal/storage"
 
@@ -16,19 +15,24 @@ import (
 // GitLabTelegramService is a Telegram service for GitLab notifications
 type GitLabTelegramService struct {
 	*telegram.TelegramService
-	pipelineStorage *storage.PipelineStorage
+	pipelineStorage *PipelineStorage
 }
 
 // NewGitLabTelegramService creates a new GitLab Telegram service
-func NewGitLabTelegramService(storageInstance *storage.Storage) (*GitLabTelegramService, error) {
-	s, err := telegram.NewTelegramService("gitlab", config.Global.GitLabTelegramBotToken, storageInstance)
+func NewGitLabTelegramService(ctx context.Context, token string, settings telegram.Settings, store *storage.Store, chatStorage *storage.ChatStorage) (*GitLabTelegramService, error) {
+	s, err := telegram.NewTelegramService("gitlab", token, settings, chatStorage)
 	if s == nil || err != nil {
 		return nil, err
 	}
 
+	pipelineStorage, err := NewPipelineStorage(ctx, store)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize pipeline storage: %w", err)
+	}
+
 	gs := &GitLabTelegramService{
 		TelegramService: s,
-		pipelineStorage: storageInstance.PipelineStorage,
+		pipelineStorage: pipelineStorage,
 	}
 
 	s.RegisterCommandHandler("start", gs.handleStartCommand)
@@ -116,7 +120,7 @@ func (s *GitLabTelegramService) handleWebhookCommand(ctx context.Context, b *bot
 // SendOrUpdatePipelineMessage updates an existing pipeline message or creates a new one
 func (s *GitLabTelegramService) SendOrUpdatePipelineMessage(chatID int64, pipelineURL string, text string) error {
 	ctx := context.Background()
-	pipelineUpdateKey := storage.CreatePipelineUpdateKey(pipelineURL, chatID)
+	pipelineUpdateKey := CreatePipelineUpdateKey(pipelineURL, chatID)
 
 	// Get existing pipeline mapping
 	pipeline, err := s.pipelineStorage.GetPipeline(ctx, pipelineUpdateKey)
@@ -132,7 +136,7 @@ func (s *GitLabTelegramService) SendOrUpdatePipelineMessage(chatID int64, pipeli
 		}
 
 		// Store pipeline mapping
-		pipeline := &storage.Pipeline{
+		pipeline := &Pipeline{
 			PipelineUpdateKey: pipelineUpdateKey,
 			MessageID:         msg.ID,
 		}
