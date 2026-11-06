@@ -11,12 +11,14 @@ This guide explains how to deploy the Webhook-Telegram Bot to AWS Lambda using T
 2. AWS credentials configured (`~/.aws/credentials` or environment variables)
 3. A Telegram bot token (from [@BotFather](https://t.me/BotFather))
 4. Go installed on your local machine (1.25+)
+5. [AWS CLI](https://aws.amazon.com/cli/) installed, with its region set to the Terraform `aws_region` (`us-east-1` by default)
+6. `make`, `zip`, and `curl` installed
 
 ## Step 1: Configure Terraform Variables
 
-Create a `terraform.tfvars` file in the `terraform` directory based on the `terraform.tfvars.example` file.
+Create a `default.tfvars` file in the `terraform` directory based on the `terraform.tfvars.example` file.
 
-## Step 2: Initialize and Apply Terraform
+## Step 2: Create the AWS Resources
 
 Initialize Terraform:
 
@@ -24,10 +26,16 @@ Initialize Terraform:
 make terraform-init
 ```
 
-Apply the configuration to create all required AWS resources:
+Ensure all dependencies are properly downloaded:
 
 ```bash
-make terraform-apply
+go mod tidy
+```
+
+Build the Lambda package and apply the configuration to create all required AWS resources:
+
+```bash
+make deploy
 ```
 
 When prompted, type `yes` to confirm. Terraform will create:
@@ -44,15 +52,9 @@ After completion, Terraform will output:
 - The Lambda function name
 - The CloudWatch log group
 
-## Step 3: Build and Deploy the Lambda Function
+## Step 3: Initialize the Bot
 
-First, ensure all dependencies are properly downloaded:
-
-```bash
-go mod tidy
-```
-
-Build and deploy the function using the Makefile:
+Terraform deploys the function without setting up the Telegram webhook, so run:
 
 ```bash
 make update
@@ -128,7 +130,7 @@ You can also view logs in the AWS Console under CloudWatch → Log Groups.
 
 ## Using Custom Domain Name
 
-To use a custom domain name, set it in the `terraform.tfvars` file.
+To use a custom domain name, set it in the `default.tfvars` file.
 
 Initially, running `make terraform-apply` will fail due to missing SSL certificate:
 
@@ -157,13 +159,14 @@ Once the bot is deployed, you can update the DNS record to point to the CloudFro
 
 You can publish multiple versions of your bot using different Terraform workspaces.
 
-For example, to deploy a staging version of your bot:
+For example, to deploy a staging version of your bot, create a `staging.tfvars` file in the `terraform` directory and run:
 
 ```bash
 make deploy ENV=staging
+make update ENV=staging
 ```
 
-This will create a new Terraform workspace for the staging environment and deploy the bot there.
+This creates a Terraform workspace for the staging environment, deploys the bot there, and initializes it.
 
 Similarly, you can check the logs for the staging environment:
 
