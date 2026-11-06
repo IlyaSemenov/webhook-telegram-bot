@@ -43,13 +43,14 @@ When prompted, type `yes` to confirm. Terraform will create:
 - IAM role and policies for Lambda
 - Lambda function
 - Lambda function URL
+- DynamoDB tables
 - CloudWatch Log Group
+- IAM user and access key for GitHub Actions
 - All necessary permissions
 
 After completion, Terraform will output:
 
 - The Lambda function URL
-- The Lambda function name
 - The CloudWatch log group
 
 ## Step 3: Initialize the Bot
@@ -136,6 +137,7 @@ Initially, running `make terraform-apply` will fail due to missing SSL certifica
 
 ```log
 InvalidViewerCertificate: The specified SSL certificate doesn't exist, isn't in the us-east-1 region, isn't valid, or doesn't include a valid certificate chain.
+```
 
 Check the certificate details:
 
@@ -143,7 +145,7 @@ Check the certificate details:
 CERTIFICATE_ARN=$(aws acm list-certificates --region us-east-1 \
   --query "CertificateSummaryList[?DomainName=='example.com'].CertificateArn" \
   --output text)
-aws acm describe-certificate \
+aws acm describe-certificate --region us-east-1 \
   --certificate-arn $CERTIFICATE_ARN \
   --query "Certificate.DomainValidationOptions" \
   --output json
@@ -154,6 +156,7 @@ Under `ResourceRecord`, you will see the DNS record that needs to be created.
 Once the certificate validation succeeds, proceed with `make terraform-apply`.
 
 Once the bot is deployed, you can update the DNS record to point to the CloudFront distribution's domain name (in the Terraform output `cloudfront_domain_name`).
+Then run `make update` to register the Telegram webhook at the custom domain.
 
 ## Publishing Multiple Versions
 
