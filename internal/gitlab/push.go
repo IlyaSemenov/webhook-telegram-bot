@@ -1,4 +1,4 @@
-package github
+package gitlab
 
 import (
 	"encoding/json"
@@ -7,22 +7,20 @@ import (
 	"slices"
 	"strings"
 
-	"webhook-telegram-bot/internal/services/telegram"
+	"webhook-telegram-bot/internal/telegram"
 )
 
-func (s *GitHubService) handlePushEvent(chatID int64, payload []byte, branchFilters []string, includeProject bool) error {
+func (s *GitLabService) handlePushEvent(chatID int64, payload []byte, branchFilters []string, includeProject bool) error {
 	var event struct {
-		Ref        string `json:"ref"`
-		Before     string `json:"before"`
-		After      string `json:"after"`
-		Repository struct {
-			FullName string `json:"full_name"`
-			HTMLURL  string `json:"html_url"`
-		} `json:"repository"`
-		Pusher struct {
-			Name string `json:"name"`
-		} `json:"pusher"`
-		Forced  bool `json:"forced"`
+		Ref      string `json:"ref"`
+		Before   string `json:"before"`
+		After    string `json:"after"`
+		UserName string `json:"user_name"`
+		Project  struct {
+			Name              string `json:"name"`
+			PathWithNamespace string `json:"path_with_namespace"`
+			WebURL            string `json:"web_url"`
+		} `json:"project"`
 		Commits []struct {
 			ID        string `json:"id"`
 			Message   string `json:"message"`
@@ -62,27 +60,21 @@ func (s *GitHubService) handlePushEvent(chatID int64, payload []byte, branchFilt
 
 	// Add project name if requested
 	if includeProject {
-		message.WriteString(fmt.Sprintf("<b>%s</b>: ", html.EscapeString(event.Repository.FullName)))
+		message.WriteString(fmt.Sprintf("<b>%s</b>: ", html.EscapeString(event.Project.Name)))
 	}
 
 	// Write event-specific message
 	if isBranchDeletion {
 		message.WriteString(fmt.Sprintf(
 			"<b>%s</b> deleted branch <code>%s</code>",
-			html.EscapeString(event.Pusher.Name),
+			html.EscapeString(event.UserName),
 			html.EscapeString(branch),
 		))
 	} else {
-		// Use appropriate verb based on whether it's a force push
-		pushVerb := "pushed"
-		if event.Forced {
-			pushVerb = "force-pushed"
-		}
-
+		// Regular push event
 		message.WriteString(fmt.Sprintf(
-			"<b>%s</b> %s to <code>%s</code>",
-			html.EscapeString(event.Pusher.Name),
-			pushVerb,
+			"<b>%s</b> pushed to <code>%s</code>",
+			html.EscapeString(event.UserName),
 			html.EscapeString(branch),
 		))
 

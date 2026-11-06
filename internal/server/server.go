@@ -7,13 +7,10 @@ import (
 	"net/http"
 
 	"webhook-telegram-bot/internal/config"
-	"webhook-telegram-bot/internal/handlers"
-	"webhook-telegram-bot/internal/services/github"
-	"webhook-telegram-bot/internal/services/gitlab"
-	"webhook-telegram-bot/internal/services/telegram"
-	telegramGithub "webhook-telegram-bot/internal/services/telegram/github"
-	telegramGitlab "webhook-telegram-bot/internal/services/telegram/gitlab"
+	"webhook-telegram-bot/internal/github"
+	"webhook-telegram-bot/internal/gitlab"
 	"webhook-telegram-bot/internal/storage"
+	"webhook-telegram-bot/internal/telegram"
 
 	"github.com/gorilla/mux"
 )
@@ -49,7 +46,7 @@ func New(cfg *config.Config) (*Server, error) {
 	}).Methods("GET")
 
 	// Setup GitHub service
-	githubTelegramSvc, err := telegramGithub.NewGitHubTelegramService(cfg.GitHubTelegramBotToken, telegramSettings, chatStorage)
+	githubTelegramSvc, err := github.NewGitHubTelegramService(cfg.GitHubTelegramBotToken, telegramSettings, chatStorage)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initialize GitHub Telegram service: %w", err)
 	}
@@ -57,7 +54,7 @@ func New(cfg *config.Config) (*Server, error) {
 		githubSvc := github.NewGitHubService(githubTelegramSvc)
 
 		// GitHub webhook endpoint
-		githubHandler := handlers.NewGitHubHandler(githubTelegramSvc, githubSvc)
+		githubHandler := github.NewGitHubHandler(githubTelegramSvc, githubSvc)
 		router.HandleFunc("/github/{chatID}", githubHandler.HandleWebhook).Methods("POST")
 
 		// GitHub Telegram bot webhook endpoint
@@ -65,7 +62,7 @@ func New(cfg *config.Config) (*Server, error) {
 	}
 
 	// Setup GitLab service
-	gitlabTelegramSvc, err := telegramGitlab.NewGitLabTelegramService(ctx, cfg.GitLabTelegramBotToken, telegramSettings, store, chatStorage)
+	gitlabTelegramSvc, err := gitlab.NewGitLabTelegramService(ctx, cfg.GitLabTelegramBotToken, telegramSettings, store, chatStorage)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initialize GitLab Telegram service: %w", err)
 	}
@@ -73,7 +70,7 @@ func New(cfg *config.Config) (*Server, error) {
 		gitlabSvc := gitlab.NewGitLabService(gitlabTelegramSvc)
 
 		// GitLab webhook endpoint
-		gitlabHandler := handlers.NewGitLabHandler(gitlabTelegramSvc, gitlabSvc)
+		gitlabHandler := gitlab.NewGitLabHandler(gitlabTelegramSvc, gitlabSvc)
 		router.HandleFunc("/gitlab/{chatID}", gitlabHandler.HandleWebhook).Methods("POST")
 
 		// GitLab Telegram bot webhook endpoint

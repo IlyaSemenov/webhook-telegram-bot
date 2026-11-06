@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"webhook-telegram-bot/internal/services/telegram"
 	"webhook-telegram-bot/internal/storage"
+	"webhook-telegram-bot/internal/telegram"
 )
 
 func TestNewGitLabTelegramService(t *testing.T) {

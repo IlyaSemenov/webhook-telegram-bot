@@ -3,14 +3,20 @@ package gitlab
 import (
 	"fmt"
 
-	"webhook-telegram-bot/internal/services/telegram"
+	"webhook-telegram-bot/internal/telegram"
 )
 
-type GitLabService struct {
-	telegramSvc telegram.PipelineMessageSender
+// PipelineMessageSender extends telegram.MessageSender with pipeline message update support.
+type PipelineMessageSender interface {
+	telegram.MessageSender
+	SendOrUpdatePipelineMessage(chatID int64, pipelineURL string, text string) error
 }
 
-func NewGitLabService(telegramSvc telegram.PipelineMessageSender) *GitLabService {
+type GitLabService struct {
+	telegramSvc PipelineMessageSender
+}
+
+func NewGitLabService(telegramSvc PipelineMessageSender) *GitLabService {
 	return &GitLabService{
 		telegramSvc: telegramSvc,
 	}

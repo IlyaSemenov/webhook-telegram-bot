@@ -15,14 +15,14 @@ Each source, such as GitHub or GitLab, is a connector and a separate Telegram bo
 
 A connector consists of:
 
-- `internal/handlers/<source>.go`: the `POST /<source>/{chatID}` endpoint that parses the request.
-- `internal/services/<source>/`: parsing events and formatting messages.
-- `internal/services/telegram/<source>/`: bot commands and `/telegram/webhook/<source>`.
+- `internal/<source>/handler.go`: the `POST /<source>/{chatID}` endpoint that parses the request.
+- `internal/<source>/bot.go`: bot commands and `/telegram/webhook/<source>`.
+- Event parsing and message formatting also live in `internal/<source>/`.
 
 Follow these boundaries:
 
 - Do not import one connector from another.
-  Move code that several connectors really share to `internal/services/telegram/`.
+  Move code that several connectors really share to `internal/telegram/`.
 - Keep source-specific concepts, such as branch filters, out of shared contracts.
   Each handler parses its own query parameters.
 - Treat the Privacy Policy in the README as a contract.
