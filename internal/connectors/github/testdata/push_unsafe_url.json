@@ -1,0 +1,33 @@
+{
+  "event_type": "push",
+  "payload": {
+    "ref": "refs/heads/main",
+    "after": "abc",
+    "pusher": {
+      "name": "John Doe"
+    },
+    "repository": {
+      "full_name": "owner/repo"
+    },
+    "commits": [
+      {
+        "id": "a",
+        "message": "first",
+        "url": "javascript:alert(1)",
+        "author": {
+          "name": "John Doe",
+          "email": "john@example.com"
+        }
+      },
+      {
+        "id": "b",
+        "message": "second",
+        "url": "https://example.com/?a=1&b=\"><b>x",
+        "author": {
+          "name": "John Doe",
+          "email": "john@example.com"
+        }
+      }
+    ]
+  }
+}

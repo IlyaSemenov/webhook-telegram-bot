@@ -1,0 +1,24 @@
+{
+  "event_type": "Pipeline Hook",
+  "is_pipeline": true,
+  "payload": {
+    "object_attributes": {
+      "id": 42,
+      "ref": "main",
+      "status": "success",
+      "url": "javascript:alert(1)"
+    },
+    "merge_request": {
+      "iid": 1,
+      "title": "Title",
+      "url": "https://example.com/?a=1&b=\"><b>x"
+    },
+    "project": {
+      "name": "repo",
+      "path_with_namespace": "owner/repo"
+    },
+    "user": {
+      "name": "John Doe"
+    }
+  }
+}

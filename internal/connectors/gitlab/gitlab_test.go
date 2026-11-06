@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/sebdah/goldie/v2"
@@ -137,11 +138,13 @@ func TestPipelineUpdatesSameURL(t *testing.T) {
 	// enabling the real implementation to update the same Telegram message.
 	svc, mock := newService()
 
+	const pipelineURL = "https://gitlab.com/owner/repo/-/pipelines/42?a=1&b=2"
+
 	basePayload := map[string]interface{}{
 		"object_attributes": map[string]interface{}{
 			"id":  42,
 			"ref": "main",
-			"url": "https://gitlab.com/owner/repo/-/pipelines/42",
+			"url": pipelineURL,
 		},
 		"project": map[string]string{
 			"name":                "repo",
@@ -160,7 +163,7 @@ func TestPipelineUpdatesSameURL(t *testing.T) {
 		"id":     42,
 		"ref":    "main",
 		"status": "running",
-		"url":    "https://gitlab.com/owner/repo/-/pipelines/42",
+		"url":    pipelineURL,
 	}
 
 	runningJSON, _ := json.Marshal(runningPayload)
@@ -178,7 +181,7 @@ func TestPipelineUpdatesSameURL(t *testing.T) {
 		"id":       42,
 		"ref":      "main",
 		"status":   "success",
-		"url":      "https://gitlab.com/owner/repo/-/pipelines/42",
+		"url":      pipelineURL,
 		"duration": 120,
 	}
 
@@ -199,8 +202,14 @@ func TestPipelineUpdatesSameURL(t *testing.T) {
 	if url1 != url2 {
 		t.Errorf("pipeline URLs don't match:\n  first:  %s\n  second: %s", url1, url2)
 	}
-	if url1 != "https://gitlab.com/owner/repo/-/pipelines/42" {
+	if url1 != pipelineURL {
 		t.Errorf("pipelineURL = %q, want pipeline URL from event", url1)
+	}
+
+	// The href is escaped, while the pipeline URL passed for updates stays unchanged
+	wantLink := `<a href="https://gitlab.com/owner/repo/-/pipelines/42?a=1&amp;b=2">`
+	if !strings.Contains(mock.pipelineMessages[0].text, wantLink) {
+		t.Errorf("message %q does not contain %q", mock.pipelineMessages[0].text, wantLink)
 	}
 
 	// Verify messages have different content (different statuses)

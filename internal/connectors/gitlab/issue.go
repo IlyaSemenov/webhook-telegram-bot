@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"html"
 	"strings"
+
+	"webhook-telegram-bot/internal/telegram"
 )
 
 func (s *GitLabService) handleIssueEvent(chatID int64, payload []byte, includeProject bool) error {
@@ -66,12 +68,13 @@ func (s *GitLabService) handleIssueEvent(chatID int64, payload []byte, includePr
 	}
 
 	message.WriteString(fmt.Sprintf(
-		"<b>%s</b> %s <a href=\"%s\">#%d %s</a>.",
+		"<b>%s</b> %s %s.",
 		html.EscapeString(event.User.Name),
 		action,
-		event.ObjectAttributes.URL,
-		event.ObjectAttributes.IID,
-		html.EscapeString(event.ObjectAttributes.Title),
+		telegram.FormatLink(
+			event.ObjectAttributes.URL,
+			fmt.Sprintf("#%d %s", event.ObjectAttributes.IID, html.EscapeString(event.ObjectAttributes.Title)),
+		),
 	))
 
 	return s.telegramSvc.SendMessage(chatID, message.String())

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"html"
 	"strings"
+
+	"webhook-telegram-bot/internal/telegram"
 )
 
 func (s *GitHubService) handlePingEvent(chatID int64, payload []byte, includeProject bool) error {
@@ -30,9 +32,8 @@ func (s *GitHubService) handlePingEvent(chatID int64, payload []byte, includePro
 	}
 
 	message.WriteString(fmt.Sprintf(
-		"Webhook configured for <a href=\"%s\">%s</a>.",
-		event.Repository.HTMLURL,
-		html.EscapeString(event.Repository.FullName),
+		"Webhook configured for %s.",
+		telegram.FormatLink(event.Repository.HTMLURL, html.EscapeString(event.Repository.FullName)),
 	))
 
 	return s.telegramSvc.SendMessage(chatID, message.String())

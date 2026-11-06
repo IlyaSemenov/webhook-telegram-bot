@@ -61,11 +61,7 @@ func formatHeadline(emoji, project, title, url string) string {
 		headline.WriteString(fmt.Sprintf("<b>%s</b>: ", formatText(project, maxProjectLength)))
 	}
 
-	if url == "" {
-		headline.WriteString(formatText(title, maxTitleLength))
-	} else {
-		headline.WriteString(fmt.Sprintf("<a href=\"%s\">%s</a>", html.EscapeString(url), formatText(title, maxTitleLength)))
-	}
+	headline.WriteString(telegram.FormatLink(url, formatText(title, maxTitleLength)))
 
 	return headline.String()
 }

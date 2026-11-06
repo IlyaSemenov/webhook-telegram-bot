@@ -1,0 +1,18 @@
+{
+  "event_type": "Issue Hook",
+  "payload": {
+    "object_attributes": {
+      "iid": 1,
+      "title": "Title",
+      "action": "open",
+      "url": "javascript:alert(1)"
+    },
+    "project": {
+      "name": "repo",
+      "path_with_namespace": "owner/repo"
+    },
+    "user": {
+      "name": "John Doe"
+    }
+  }
+}

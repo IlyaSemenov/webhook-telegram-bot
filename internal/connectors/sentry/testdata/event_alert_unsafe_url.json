@@ -1,0 +1,12 @@
+{
+  "resource": "event_alert",
+  "payload": {
+    "data": {
+      "event": {
+        "title": "TypeError",
+        "level": "error",
+        "web_url": "javascript:alert(1)"
+      }
+    }
+  }
+}

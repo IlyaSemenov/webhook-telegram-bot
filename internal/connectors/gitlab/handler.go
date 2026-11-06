@@ -2,7 +2,6 @@ package gitlab
 
 import (
 	"encoding/json"
-	"io"
 	"log"
 	"net/http"
 
@@ -38,10 +37,8 @@ func (h *GitLabHandler) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 	includeProject := r.URL.Query().Get("project") != ""
 
 	// Read request body
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		log.Printf("Failed to read request body: %v", err)
-		http.Error(w, "Failed to read request body", http.StatusBadRequest)
+	body, ok := telegram.ReadWebhookBody(w, r)
+	if !ok {
 		return
 	}
 

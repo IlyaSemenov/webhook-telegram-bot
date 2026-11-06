@@ -1,0 +1,10 @@
+{
+  "event_type": "ping",
+  "payload": {
+    "hook_id": 12345,
+    "repository": {
+      "full_name": "owner/repo",
+      "html_url": "javascript:alert(1)"
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "event_type": "workflow_run",
+  "payload": {
+    "action": "completed",
+    "workflow_run": {
+      "name": "CI",
+      "html_url": "javascript:alert(1)",
+      "status": "completed",
+      "conclusion": "success",
+      "head_branch": "main"
+    },
+    "repository": {
+      "full_name": "owner/repo"
+    }
+  }
+}

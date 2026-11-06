@@ -6,6 +6,8 @@ import (
 	"html"
 	"slices"
 	"strings"
+
+	"webhook-telegram-bot/internal/telegram"
 )
 
 func (s *GitLabService) handleMergeRequestEvent(chatID int64, payload []byte, branchFilters []string, includeProject bool) error {
@@ -86,12 +88,13 @@ func (s *GitLabService) handleMergeRequestEvent(chatID int64, payload []byte, br
 	}
 
 	message.WriteString(fmt.Sprintf(
-		"<b>%s</b> %s <a href=\"%s\">!%d %s</a> (<code>%s</code> → <code>%s</code>).",
+		"<b>%s</b> %s %s (<code>%s</code> → <code>%s</code>).",
 		html.EscapeString(event.User.Name),
 		action,
-		event.ObjectAttributes.URL,
-		event.ObjectAttributes.IID,
-		html.EscapeString(event.ObjectAttributes.Title),
+		telegram.FormatLink(
+			event.ObjectAttributes.URL,
+			fmt.Sprintf("!%d %s", event.ObjectAttributes.IID, html.EscapeString(event.ObjectAttributes.Title)),
+		),
 		html.EscapeString(event.ObjectAttributes.SourceBranch),
 		html.EscapeString(event.ObjectAttributes.TargetBranch),
 	))

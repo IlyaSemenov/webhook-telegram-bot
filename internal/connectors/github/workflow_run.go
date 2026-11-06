@@ -6,6 +6,8 @@ import (
 	"html"
 	"slices"
 	"strings"
+
+	"webhook-telegram-bot/internal/telegram"
 )
 
 func (s *GitHubService) handleWorkflowRunEvent(chatID int64, payload []byte, branchFilters []string, includeProject bool) error {
@@ -65,9 +67,8 @@ func (s *GitHubService) handleWorkflowRunEvent(chatID int64, payload []byte, bra
 	}
 
 	message.WriteString(fmt.Sprintf(
-		"<a href=\"%s\">%s</a> %s.",
-		event.WorkflowRun.HTMLURL,
-		html.EscapeString(event.WorkflowRun.Name),
+		"%s %s.",
+		telegram.FormatLink(event.WorkflowRun.HTMLURL, html.EscapeString(event.WorkflowRun.Name)),
 		html.EscapeString(event.WorkflowRun.Conclusion),
 	))
 

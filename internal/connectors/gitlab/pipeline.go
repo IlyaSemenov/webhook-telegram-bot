@@ -7,6 +7,8 @@ import (
 	"html"
 	"slices"
 	"strings"
+
+	"webhook-telegram-bot/internal/telegram"
 )
 
 // PipelineEventData represents the parsed pipeline event data
@@ -103,20 +105,17 @@ func (s *GitLabService) handlePipelineEvent(chatID int64, payload []byte, branch
 	// Build the "for" part based on whether it's for a branch or MR
 	var forPart string
 	if event.MergeRequest != nil {
-		forPart = fmt.Sprintf(
-			"<a href=\"%s\">!%d %s</a>",
+		forPart = telegram.FormatLink(
 			event.MergeRequest.URL,
-			event.MergeRequest.IID,
-			html.EscapeString(event.MergeRequest.Title),
+			fmt.Sprintf("!%d %s", event.MergeRequest.IID, html.EscapeString(event.MergeRequest.Title)),
 		)
 	} else {
 		forPart = fmt.Sprintf("<code>%s</code>", html.EscapeString(event.ObjectAttributes.Ref))
 	}
 
 	message.WriteString(fmt.Sprintf(
-		"<a href=\"%s\">Pipeline #%d</a> %s for %s",
-		event.ObjectAttributes.URL,
-		event.ObjectAttributes.ID,
+		"%s %s for %s",
+		telegram.FormatLink(event.ObjectAttributes.URL, fmt.Sprintf("Pipeline #%d", event.ObjectAttributes.ID)),
 		html.EscapeString(statusDisplay),
 		forPart,
 	))
