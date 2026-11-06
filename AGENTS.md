@@ -47,7 +47,7 @@ Select another binary with `BOT`: the `Dockerfile` build argument and the `make 
 
 Each binary runs as a long-lived process on Dokku or as an AWS Lambda when `AWS_LAMBDA_FUNCTION_NAME` is set.
 
-- Pushing to `main` deploys to Dokku through `.github/workflows/deploy-dokku.yaml`.
+- Pushing to `main` deploys to Dokku through `.github/workflows/deploy.yaml` when the repository variable `DEPLOY_DOKKU` is `true`.
 - Lambda freezes after the HTTP response, so finish all work before responding.
   Telegram commands run in a background worker after the response and can be lost on Lambda.
 - Keep storage code portable across the docstore drivers: MongoDB, DynamoDB, and in-memory.

@@ -45,3 +45,14 @@ dokku letsencrypt:cron-job --add
 dokku letsencrypt:set $APP email your@email.com
 dokku letsencrypt:enable $APP
 ```
+
+## Automatic deployment with GitHub Actions
+
+The `dokku` job of the workflow `.github/workflows/deploy.yaml` deploys your bot on every push to the main branch when the repository variable `DEPLOY_DOKKU` is `true`.
+Without the variable, the job is skipped.
+
+In your GitHub repository, go to Settings → Secrets and variables → Actions and add:
+
+- The secret `DOKKU_SSH_URL`: the URL of your app, such as `ssh://dokku@dokku.host/webhook-telegram-bot`
+- The secret `DOKKU_SSH_PRIVATE_KEY`: an SSH private key that Dokku accepts
+- The variable `DEPLOY_DOKKU` with the value `true`

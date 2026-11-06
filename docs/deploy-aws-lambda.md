@@ -86,8 +86,8 @@ make update
 
 ### Automatic Updates with GitHub Actions
 
-The workflow `.github/workflows/deploy-aws.yaml` deploys your bot on every push to the main branch when the repository variable `DEPLOY_AWS_LAMBDA` is `true`.
-Without the variable, the workflow skips the deployment.
+The `aws-lambda` job of the workflow `.github/workflows/deploy.yaml` deploys your bot on every push to the main branch when the repository variable `DEPLOY_AWS_LAMBDA` is `true`.
+Without the variable, the job is skipped.
 
 #### Step 1: Add GitHub Secrets
 

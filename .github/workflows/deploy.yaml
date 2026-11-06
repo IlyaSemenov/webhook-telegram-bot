@@ -1,4 +1,4 @@
-name: Deploy to AWS Lambda
+name: Deploy
 
 on:
   push:
@@ -6,7 +6,27 @@ on:
       - main
 
 jobs:
-  deploy:
+  dokku:
+    if: vars.DEPLOY_DOKKU == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-dokku
+    steps:
+      - name: Cloning repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push to dokku
+        uses: dokku/github-action@master
+        with:
+          # ssh://dokku@dokku.host/app
+          git_remote_url: ${{ secrets.DOKKU_SSH_URL }}
+          branch: main
+          git_push_flags: --force
+          ssh_private_key: ${{ secrets.DOKKU_SSH_PRIVATE_KEY }}
+
+  aws-lambda:
     if: vars.DEPLOY_AWS_LAMBDA == 'true'
     runs-on: ubuntu-latest
     steps:
