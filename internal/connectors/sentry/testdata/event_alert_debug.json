@@ -1,0 +1,63 @@
+{
+  "resource": "event_alert",
+  "payload": {
+    "action": "triggered",
+    "actor": {
+      "id": "sentry",
+      "name": "Sentry",
+      "type": "application"
+    },
+    "data": {
+      "event": {
+        "event_id": "0123456789abcdef0123456789abcdef",
+        "project": 42,
+        "platform": "python",
+        "type": "error",
+        "title": "ValueError: invalid literal for int()",
+        "culprit": "app.views.checkout",
+        "level": "debug",
+        "environment": "production",
+        "message": "",
+        "tags": [
+          [
+            "environment",
+            "production"
+          ],
+          [
+            "level",
+            "error"
+          ]
+        ],
+        "exception": {
+          "values": [
+            {
+              "type": "ValueError",
+              "value": "invalid literal for int()"
+            }
+          ]
+        },
+        "user": {
+          "email": "must-not-appear@example.com",
+          "ip_address": "198.51.100.7"
+        },
+        "request": {
+          "url": "https://shop.example.com/must-not-appear",
+          "headers": [
+            [
+              "Cookie",
+              "must-not-appear"
+            ]
+          ]
+        },
+        "url": "https://sentry.example.com/api/0/projects/acme/backend/events/0123456789abcdef0123456789abcdef/",
+        "web_url": "https://sentry.example.com/organizations/acme/issues/1001/events/0123456789abcdef0123456789abcdef/",
+        "issue_url": "https://sentry.example.com/api/0/organizations/acme/issues/1001/",
+        "issue_id": "1001"
+      },
+      "triggered_rule": "Must not appear"
+    },
+    "installation": {
+      "uuid": "00000000-0000-0000-0000-000000000000"
+    }
+  }
+}

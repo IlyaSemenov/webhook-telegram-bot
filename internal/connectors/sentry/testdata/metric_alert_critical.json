@@ -1,0 +1,36 @@
+{
+  "resource": "metric_alert",
+  "payload": {
+    "action": "critical",
+    "actor": {
+      "id": "sentry",
+      "name": "Sentry",
+      "type": "application"
+    },
+    "data": {
+      "description_title": "Critical: Too many errors",
+      "description_text": "120 events in the last 10 minutes",
+      "web_url": "https://sentry.example.com/organizations/acme/alerts/rules/details/7/?alert=11",
+      "metric_alert": {
+        "id": "11",
+        "identifier": "11",
+        "title": "Too many errors",
+        "status": 2,
+        "projects": [
+          "backend"
+        ],
+        "alert_rule": {
+          "id": "7",
+          "name": "Too many errors",
+          "aggregate": "count()",
+          "projects": [
+            "backend"
+          ]
+        }
+      }
+    },
+    "installation": {
+      "uuid": "00000000-0000-0000-0000-000000000000"
+    }
+  }
+}

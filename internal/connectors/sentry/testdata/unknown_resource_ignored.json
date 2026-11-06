@@ -1,0 +1,16 @@
+{
+  "resource": "future_resource",
+  "expect_no_output": true,
+  "payload": {
+    "action": "created",
+    "actor": {
+      "id": "sentry",
+      "name": "Sentry",
+      "type": "application"
+    },
+    "data": {},
+    "installation": {
+      "uuid": "00000000-0000-0000-0000-000000000000"
+    }
+  }
+}

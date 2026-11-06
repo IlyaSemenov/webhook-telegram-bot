@@ -1,0 +1,20 @@
+{
+  "resource": "comment",
+  "expect_no_output": true,
+  "payload": {
+    "action": "created",
+    "actor": {
+      "id": "sentry",
+      "name": "Sentry",
+      "type": "application"
+    },
+    "data": {
+      "comment": "Must not appear",
+      "issue_id": 1001,
+      "project_slug": "backend"
+    },
+    "installation": {
+      "uuid": "00000000-0000-0000-0000-000000000000"
+    }
+  }
+}

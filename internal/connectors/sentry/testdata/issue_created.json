@@ -1,0 +1,44 @@
+{
+  "resource": "issue",
+  "payload": {
+    "action": "created",
+    "actor": {
+      "id": "sentry",
+      "name": "Sentry",
+      "type": "application"
+    },
+    "data": {
+      "issue": {
+        "id": "1001",
+        "shortId": "BACKEND-1",
+        "title": "ValueError: invalid literal for int()",
+        "culprit": "app.views.checkout",
+        "level": "error",
+        "status": "unresolved",
+        "substatus": "new",
+        "statusDetails": {},
+        "issueType": "error",
+        "issueCategory": "error",
+        "project": {
+          "id": "42",
+          "name": "Backend Service",
+          "slug": "backend",
+          "platform": "python"
+        },
+        "assignedTo": {
+          "type": "user",
+          "id": "5",
+          "name": "Must Not Appear"
+        },
+        "count": "1",
+        "userCount": 1,
+        "url": "https://sentry.example.com/api/0/organizations/acme/issues/1001/",
+        "web_url": "https://sentry.example.com/organizations/acme/issues/1001/",
+        "project_url": "https://sentry.example.com/organizations/acme/issues/?project=42"
+      }
+    },
+    "installation": {
+      "uuid": "00000000-0000-0000-0000-000000000000"
+    }
+  }
+}

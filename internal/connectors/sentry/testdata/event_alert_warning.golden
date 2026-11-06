@@ -1,0 +1,2 @@
+🟡 <a href="https://sentry.example.com/organizations/acme/issues/1001/events/0123456789abcdef0123456789abcdef/">ValueError: invalid literal for int()</a>
+<code>app.views.checkout</code> · production
