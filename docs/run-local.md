@@ -117,5 +117,5 @@ If you're having issues with webhooks, check:
 ## Local Development Tips
 
 - `make run` does not reload code changes; restart it or use `make dev`
-- You can use `go run ./cmd/bot` or `go run ./cmd/github` with the Go debugger for step-by-step debugging
+- You can use `go run ./cmd/all` or `go run ./cmd/github` with the Go debugger for step-by-step debugging
 - Keep your tunnel running in a separate terminal window while developing

@@ -2,7 +2,7 @@
 FROM golang:1.25-alpine3.22 AS builder
 
 # The cmd/ directory to build
-ARG BOT=bot
+ARG BOT=all
 
 WORKDIR /app
 

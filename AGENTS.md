@@ -34,15 +34,15 @@ Follow these boundaries:
 
 Besides the connector itself, update:
 
-- `cmd/bot/main.go` and a new `cmd/<source>/main.go`.
+- `cmd/all/main.go` and a new `cmd/<source>/main.go`.
 - `.env.example`, `terraform/variables.tf`, `terraform/terraform.tfvars.sample`, and the Lambda environment in `terraform/lambda.tf`.
 - The header whitelist in `terraform/cloudfront.tf`, or the source's event headers will not reach the bot.
 - `README.md`.
 
 ## Runtime and deployment
 
-`cmd/bot` runs every connector that has a token, and `cmd/<source>` runs one connector.
-The Dokku and Lambda deployments use `cmd/bot`.
+`cmd/all` runs every connector that has a token, and `cmd/<source>` runs one connector.
+The Dokku and Lambda deployments use `cmd/all`.
 Select another binary with `BOT`: the `Dockerfile` build argument and the `make build`, `make run`, and `make dev` variable.
 
 Each binary runs as a long-lived process on Dokku or as an AWS Lambda when `AWS_LAMBDA_FUNCTION_NAME` is set.

@@ -3,7 +3,7 @@
 # Environment variable defaults
 ENV ?= prod
 # The cmd/ directory to build and run
-BOT ?= bot
+BOT ?= all
 FUNCTION_NAME = $(if $(filter prod,$(ENV)),webhook-telegram-bot,webhook-telegram-bot-$(ENV))
 TF_WORKSPACE="$(if $(filter prod,$(ENV)),default,$(ENV))"
 
@@ -18,7 +18,7 @@ clean:
 # Build for AWS Lambda
 build-lambda:
 	# For CGO, see https://github.com/aws/aws-lambda-go/issues/340
-	GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o bin/bootstrap ./cmd/bot
+	GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -o bin/bootstrap ./cmd/all
 	cd bin && zip function.zip bootstrap
 
 # Initialize Terraform
