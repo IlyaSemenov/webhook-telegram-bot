@@ -83,7 +83,8 @@ make update
 
 ### Automatic Updates with GitHub Actions
 
-The repository is configured with GitHub Actions to automatically deploy your bot whenever you push to the main branch.
+The workflow `.github/workflows/deploy-aws.yaml` deploys your bot on every push to the main branch when the repository variable `DEPLOY_AWS_LAMBDA` is `true`.
+Without the variable, the workflow skips the deployment.
 
 #### Step 1: Add GitHub Secrets
 
@@ -95,11 +96,10 @@ In your GitHub repository:
    - `AWS_SECRET_ACCESS_KEY`: Your AWS secret key
    - `AWS_REGION`: Your AWS region (e.g., `us-east-1`)
 
-#### Step 2: Automatic Deployment
+#### Step 2: Enable Automatic Deployment
 
-The GitHub workflow file (`.github/workflows/deploy.yml`) is already included in the repository.
-
-Now that you've configured the AWS credentials in GitHub Secrets, automatic deployments are active. Every time you push to the main branch, GitHub Actions will automatically build and deploy your bot to AWS Lambda.
+On the same page, add the repository variable `DEPLOY_AWS_LAMBDA` with the value `true`.
+Every push to the main branch then builds and deploys your bot to AWS Lambda.
 
 ## Modifying Infrastructure
 

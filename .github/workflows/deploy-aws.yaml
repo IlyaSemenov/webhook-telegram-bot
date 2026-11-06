@@ -7,6 +7,7 @@ on:
 
 jobs:
   deploy:
+    if: vars.DEPLOY_AWS_LAMBDA == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
