@@ -101,7 +101,7 @@ func TestGetChatWebhookURL(t *testing.T) {
 	t.Run("issues a URL to a chat without a record and keeps it", func(t *testing.T) {
 		service, _, _ := newWebhookService(t)
 
-		webhookURL, err := service.GetChatWebhookURL(ctx, -100)
+		webhookURL, err := service.getChatWebhookURL(ctx, -100)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -117,7 +117,7 @@ func TestGetChatWebhookURL(t *testing.T) {
 			t.Errorf("URL = %q, want %q", webhookURL, want)
 		}
 
-		again, err := service.GetChatWebhookURL(ctx, -100)
+		again, err := service.getChatWebhookURL(ctx, -100)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
@@ -132,12 +132,53 @@ func TestGetChatWebhookURL(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		webhookURL, err := service.GetChatWebhookURL(ctx, -100)
+		webhookURL, err := service.getChatWebhookURL(ctx, -100)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if want := "https://bot.example.com/test/-100/" + createWebhookToken("secret", "test", -100, 0); webhookURL != want {
 			t.Errorf("URL = %q, want %q", webhookURL, want)
+		}
+	})
+}
+
+// failingGetStore is chat storage that fails to get or create the record of a chat.
+type failingGetStore struct {
+	*storage.ChatStorage
+}
+
+func (s failingGetStore) GetOrCreateChat(context.Context, int64, string) (*storage.Chat, error) {
+	return nil, errors.New("storage failure")
+}
+
+func TestSendWebhookURL(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("sends the URL with the setup instructions", func(t *testing.T) {
+		service, _, server := newWebhookService(t)
+		service.baseURL = "https://bot.example.com/a&b"
+
+		service.sendWebhookURL(ctx, -100, "Test", "<b>Setup</b>")
+
+		webhookURL, err := service.getChatWebhookURL(ctx, -100)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		escapedURL := strings.ReplaceAll(webhookURL, "&", "&amp;")
+		want := "🔗 <b>Your Test Webhook URL</b>\n\n<code>" + escapedURL + "</code>\n\n" + webhookURLNotice + "\n\n<b>Setup</b>"
+		if len(server.sentTexts) != 1 || server.sentTexts[0] != want {
+			t.Errorf("sent texts = %q, want [%q]", server.sentTexts, want)
+		}
+	})
+
+	t.Run("sends an error message if the URL cannot be issued", func(t *testing.T) {
+		service, collection, server := newWebhookService(t)
+		service.chatStorage = failingGetStore{storage.NewChatStorage(collection)}
+
+		service.sendWebhookURL(ctx, -100, "Test", "<b>Setup</b>")
+
+		if len(server.sentTexts) != 1 || server.sentTexts[0] != webhookURLErrorText {
+			t.Errorf("sent texts = %q, want [%q]", server.sentTexts, webhookURLErrorText)
 		}
 	})
 }

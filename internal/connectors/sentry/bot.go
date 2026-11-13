@@ -2,9 +2,6 @@ package sentry
 
 import (
 	"context"
-	"fmt"
-	"html"
-	"log"
 
 	"webhook-telegram-bot/internal/app"
 	"webhook-telegram-bot/internal/telegram"
@@ -31,10 +28,24 @@ func NewSentryTelegramService(_ context.Context, deps app.Deps) (*SentryTelegram
 
 	s.RegisterCommandHandler("start", ss.handleStartCommand)
 	s.RegisterCommandHandler("help", ss.handleHelpCommand)
-	s.RegisterCommandHandler("webhook", ss.handleWebhookCommand)
+	s.RegisterWebhookCommand(sourceName, webhookSetupText)
 
 	return ss, nil
 }
+
+// sourceName is the name of the source in the /webhook reply.
+const sourceName = "Sentry"
+
+// webhookSetupText is the instructions for adding the webhook URL to Sentry, shown by the /webhook command.
+const webhookSetupText = "<b>How to set up:</b>\n\n" +
+	"1. In Sentry, go to Settings → Developer Settings and create a new internal integration\n" +
+	"2. Paste the URL above in the 'Webhook URL' field\n" +
+	"3. Turn on 'Alert Rule Action'\n" +
+	"4. Save the integration\n" +
+	"5. In an alert, add an action that sends a notification via this integration\n\n" +
+	"To receive issue state changes instead of alerts, by default for all projects, set the 'Issue &amp; Event' permission to Read and subscribe to the 'issue' webhook.\n\n" +
+	"<b>Optional parameters:</b>\n\n" +
+	"• <code>?project=1</code> — include project name in messages"
 
 var (
 	profileDescription = "Sends Sentry alerts and issue updates to Telegram via webhooks."
@@ -80,29 +91,6 @@ func (s *SentryTelegramService) handleHelpCommand(ctx context.Context, b *bot.Bo
 		"• /help - Show this help message\n" +
 		"• /webhook - Get your unique Sentry webhook URL\n\n" +
 		"To set up webhooks, use the /webhook command and add the URL to an internal integration in Sentry."
-
-	s.SendMessageOrLogError(update.Message.Chat.ID, text)
-}
-
-func (s *SentryTelegramService) handleWebhookCommand(ctx context.Context, b *bot.Bot, update *models.Update) {
-	webhookURL, err := s.GetChatWebhookURL(ctx, update.Message.Chat.ID)
-	if err != nil {
-		log.Printf("Failed to get webhook URL for chat %d: %v", update.Message.Chat.ID, err)
-		s.SendMessageOrLogError(update.Message.Chat.ID, telegram.WebhookURLErrorText)
-		return
-	}
-
-	text := fmt.Sprintf("🔗 <b>Your Sentry Webhook URL</b>\n\n<code>%s</code>\n\n", webhookURL) +
-		telegram.WebhookURLNotice + "\n\n" +
-		"<b>How to set up:</b>\n\n" +
-		"1. In Sentry, go to Settings → Developer Settings and create a new internal integration\n" +
-		"2. Paste the URL above in the 'Webhook URL' field\n" +
-		"3. Turn on 'Alert Rule Action'\n" +
-		"4. Save the integration\n" +
-		"5. In an alert, add an action that sends a notification via this integration\n\n" +
-		"To receive issue state changes instead of alerts, by default for all projects, set the 'Issue &amp; Event' permission to Read and subscribe to the 'issue' webhook.\n\n" +
-		"<b>Optional parameters:</b>\n\n" +
-		"• <code>" + html.EscapeString("?project=1") + "</code> — include project name in messages"
 
 	s.SendMessageOrLogError(update.Message.Chat.ID, text)
 }

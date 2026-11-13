@@ -3,8 +3,6 @@ package gitlab
 import (
 	"context"
 	"fmt"
-	"html"
-	"log"
 
 	"webhook-telegram-bot/internal/app"
 	"webhook-telegram-bot/internal/telegram"
@@ -38,10 +36,30 @@ func NewGitLabTelegramService(ctx context.Context, deps app.Deps) (*GitLabTelegr
 
 	s.RegisterCommandHandler("start", gs.handleStartCommand)
 	s.RegisterCommandHandler("help", gs.handleHelpCommand)
-	s.RegisterCommandHandler("webhook", gs.handleWebhookCommand)
+	s.RegisterWebhookCommand(sourceName, webhookSetupText)
 
 	return gs, nil
 }
+
+// sourceName is the name of the source in the /webhook reply.
+const sourceName = "GitLab"
+
+// webhookSetupText is the instructions for adding the webhook URL to GitLab, shown by the /webhook command.
+const webhookSetupText = "<b>How to set up:</b>\n\n" +
+	"1. Go to your GitLab project\n" +
+	"2. Click on Settings → Webhooks\n" +
+	"3. Click 'Add new webhook'\n" +
+	"4. Paste the URL above in the 'URL' field\n" +
+	"5. Select the events you want to receive:\n" +
+	"   • Push events\n" +
+	"   • Issues events\n" +
+	"   • Merge request events\n" +
+	"   • Pipeline events\n" +
+	"6. Click 'Add webhook'\n\n" +
+	"Use the 'Test' button to test the webhook.\n\n" +
+	"<b>Optional parameters:</b>\n\n" +
+	"• <code>?project=1</code> — include project name in messages\n" +
+	"• <code>?branch=main&amp;branch=develop</code> — filter events by one or more branches"
 
 var (
 	profileDescription = "Monitors GitLab repo activity via webhooks and sends updates to Telegram."
@@ -89,37 +107,6 @@ func (s *GitLabTelegramService) handleHelpCommand(ctx context.Context, b *bot.Bo
 		"• /help - Show this help message\n" +
 		"• /webhook - Get your unique GitLab webhook URL\n\n" +
 		"To set up webhooks, use the appropriate command and add the URL to your repository's webhook settings."
-
-	s.SendMessageOrLogError(update.Message.Chat.ID, text)
-}
-
-// handleWebhookCommand handles the /webhook command
-func (s *GitLabTelegramService) handleWebhookCommand(ctx context.Context, b *bot.Bot, update *models.Update) {
-	webhookURL, err := s.GetChatWebhookURL(ctx, update.Message.Chat.ID)
-	if err != nil {
-		log.Printf("Failed to get webhook URL for chat %d: %v", update.Message.Chat.ID, err)
-		s.SendMessageOrLogError(update.Message.Chat.ID, telegram.WebhookURLErrorText)
-		return
-	}
-
-	// Create response message
-	text := fmt.Sprintf("🔗 <b>Your GitLab Webhook URL</b>\n\n<code>%s</code>\n\n", webhookURL) +
-		telegram.WebhookURLNotice + "\n\n" +
-		"<b>How to set up:</b>\n\n" +
-		"1. Go to your GitLab project\n" +
-		"2. Click on Settings → Webhooks\n" +
-		"3. Click 'Add new webhook'\n" +
-		"4. Paste the URL above in the 'URL' field\n" +
-		"5. Select the events you want to receive:\n" +
-		"   • Push events\n" +
-		"   • Issues events\n" +
-		"   • Merge request events\n" +
-		"   • Pipeline events\n" +
-		"6. Click 'Add webhook'\n\n" +
-		"Use the 'Test' button to test the webhook.\n\n" +
-		"<b>Optional parameters:</b>\n\n" +
-		"• <code>" + html.EscapeString("?project=1") + "</code> — include project name in messages\n" +
-		"• <code>" + html.EscapeString("?branch=main&branch=develop") + "</code> — filter events by one or more branches"
 
 	s.SendMessageOrLogError(update.Message.Chat.ID, text)
 }
