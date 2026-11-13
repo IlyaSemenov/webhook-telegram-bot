@@ -103,14 +103,14 @@ func checkRequests(t *testing.T, server *telegramServer, methods ...string) {
 	}
 }
 
-// checkButtonAnswer checks that the request answers the button press with the alert, or without one if alertText is empty.
-func checkButtonAnswer(t *testing.T, request telegramRequest, alertText string) {
+// checkButtonAnswer checks that the request answers the button press with the text, shown as an alert if showAlert is set.
+func checkButtonAnswer(t *testing.T, request telegramRequest, text string, showAlert bool) {
 	t.Helper()
-	if got := request.form.Get("text"); got != alertText {
-		t.Errorf("alert = %q, want %q", got, alertText)
+	if got := request.form.Get("text"); got != text {
+		t.Errorf("text = %q, want %q", got, text)
 	}
-	if got, want := request.form.Get("show_alert") == "true", alertText != ""; got != want {
-		t.Errorf("show_alert = %v, want %v", got, want)
+	if got := request.form.Get("show_alert") == "true"; got != showAlert {
+		t.Errorf("show_alert = %v, want %v", got, showAlert)
 	}
 }
 
@@ -191,7 +191,7 @@ func TestWebhookCommandReissue(t *testing.T) {
 		processUpdate(service, newButtonUpdate(-100, reissueData))
 
 		checkRequests(t, server, "answerCallbackQuery", "editMessageReplyMarkup")
-		checkButtonAnswer(t, server.requests[0], reissueWarningText)
+		checkButtonAnswer(t, server.requests[0], reissueWarningText, false)
 		checkButtons(t, server.requests[1], confirmReissueData, cancelReissueData)
 		if issuedAt := getIssuedAt(t, service); issuedAt != 100 {
 			t.Errorf("issue time = %d, want the previous 100", issuedAt)
@@ -204,7 +204,7 @@ func TestWebhookCommandReissue(t *testing.T) {
 		processUpdate(service, newButtonUpdate(-100, cancelReissueData))
 
 		checkRequests(t, server, "answerCallbackQuery", "editMessageReplyMarkup")
-		checkButtonAnswer(t, server.requests[0], "")
+		checkButtonAnswer(t, server.requests[0], "", false)
 		checkButtons(t, server.requests[1], reissueData)
 		if issuedAt := getIssuedAt(t, service); issuedAt != 100 {
 			t.Errorf("issue time = %d, want the previous 100", issuedAt)
@@ -221,7 +221,7 @@ func TestWebhookCommandReissue(t *testing.T) {
 			t.Fatalf("issue time = %d, want later than the previous 100", issuedAt)
 		}
 		checkRequests(t, server, "answerCallbackQuery", "editMessageText")
-		checkButtonAnswer(t, server.requests[0], "")
+		checkButtonAnswer(t, server.requests[0], "", false)
 		edit := server.requests[1]
 		if got, want := edit.form.Get("message_id"), strconv.Itoa(pressedMessageID); got != want {
 			t.Errorf("edited message = %s, want %s", got, want)
@@ -279,7 +279,7 @@ func TestWebhookCommandReissue(t *testing.T) {
 		processUpdate(service, newButtonUpdate(-100, confirmReissueData))
 
 		checkRequests(t, server, "answerCallbackQuery", "editMessageReplyMarkup")
-		checkButtonAnswer(t, server.requests[0], reissueErrorText)
+		checkButtonAnswer(t, server.requests[0], reissueErrorText, true)
 		checkButtons(t, server.requests[1], reissueData)
 	})
 }

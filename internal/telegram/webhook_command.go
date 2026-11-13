@@ -17,8 +17,9 @@ const webhookURLNotice = "Keep this URL private: anyone who has it can send mess
 // webhookURLErrorText is the reply of the /webhook command when the URL cannot be issued.
 const webhookURLErrorText = "❌ Failed to get the webhook URL. Please try again later."
 
-// reissueWarningText is the alert that asks to confirm reissuing the webhook URL.
-const reissueWarningText = "All previous webhook URLs of this bot in this chat will stop working. Confirm to reissue the URL."
+// reissueWarningText is the notification that asks to confirm reissuing the webhook URL with the button under the message.
+// It is not an alert, whose OK button would look like the confirmation.
+const reissueWarningText = "To reissue the URL, press ⚠️ Revoke previous URLs below. All previous webhook URLs of this bot in this chat will stop working."
 
 // reissueErrorText is the alert shown when the webhook URL cannot be reissued.
 const reissueErrorText = "❌ Failed to reissue the webhook URL. Please try again later."
@@ -92,13 +93,13 @@ func (c *webhookCommand) sendWebhookURL(ctx context.Context, chatID int64) {
 
 // handleReissue warns that reissuing the URL invalidates the previous ones and asks to confirm it.
 func (c *webhookCommand) handleReissue(_ context.Context, query *models.CallbackQuery) {
-	c.service.answerCallbackQuery(query.ID, reissueWarningText)
+	c.service.answerCallbackQuery(query.ID, reissueWarningText, false)
 	c.updateKeyboard(query, confirmReissueKeyboard)
 }
 
 // handleCancelReissue restores the button that starts reissuing the URL.
 func (c *webhookCommand) handleCancelReissue(_ context.Context, query *models.CallbackQuery) {
-	c.service.answerCallbackQuery(query.ID, "")
+	c.service.answerCallbackQuery(query.ID, "", false)
 	c.updateKeyboard(query, reissueKeyboard)
 }
 
@@ -108,18 +109,18 @@ func (c *webhookCommand) handleConfirmReissue(ctx context.Context, query *models
 	s := c.service
 	chatID, messageID, ok := getCallbackMessage(query)
 	if !ok {
-		s.answerCallbackQuery(query.ID, "")
+		s.answerCallbackQuery(query.ID, "", false)
 		return
 	}
 
 	issuedAt, err := s.chatStorage.ReissueWebhookURL(ctx, chatID, s.botId)
 	if err != nil {
 		log.Printf("Failed to reissue %s webhook URL of chat %d: %v", s.botId, chatID, err)
-		s.answerCallbackQuery(query.ID, reissueErrorText)
+		s.answerCallbackQuery(query.ID, reissueErrorText, true)
 		c.updateKeyboard(query, reissueKeyboard)
 		return
 	}
-	s.answerCallbackQuery(query.ID, "")
+	s.answerCallbackQuery(query.ID, "", false)
 
 	text := reissuedText + "\n\n" + c.formatText(s.createWebhookURL(chatID, issuedAt))
 	if err := s.updateMessage(chatID, messageID, text, reissueKeyboard); err != nil {

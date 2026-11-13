@@ -296,13 +296,14 @@ func (s *TelegramService) updateReplyMarkup(chatID int64, messageID int, replyMa
 	return redactBotToken(err)
 }
 
-// answerCallbackQuery stops the progress indicator of a pressed inline button, and shows alertText as an alert unless it is empty.
-func (s *TelegramService) answerCallbackQuery(queryID string, alertText string) {
+// answerCallbackQuery stops the progress indicator of a pressed inline button and shows text unless it is empty:
+// as an alert that the user dismisses if showAlert is set, or as a notification that disappears by itself otherwise.
+func (s *TelegramService) answerCallbackQuery(queryID string, text string, showAlert bool) {
 	ctx := context.Background()
 	params := &bot.AnswerCallbackQueryParams{
 		CallbackQueryID: queryID,
-		Text:            alertText,
-		ShowAlert:       alertText != "",
+		Text:            text,
+		ShowAlert:       showAlert,
 	}
 
 	if _, err := s.bot.AnswerCallbackQuery(ctx, params); err != nil {
