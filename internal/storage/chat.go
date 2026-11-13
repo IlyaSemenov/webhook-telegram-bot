@@ -17,7 +17,8 @@ const (
 	WebhookAuthAny = ""
 	// WebhookAuthToken accepts only URLs with a token.
 	WebhookAuthToken = "token"
-	// WebhookAuthUpgraded accepts only URLs with a token since the first request with a token to a chat with WebhookAuthAny.
+	// WebhookAuthUpgraded accepts only URLs with a token in a chat that used bots before URLs had tokens.
+	// A chat with WebhookAuthAny gets it with the first request with a token or the first reissue of the URL.
 	WebhookAuthUpgraded = "upgraded"
 )
 
@@ -154,6 +155,27 @@ func (s *ChatStorage) hasLegacyHistory(ctx context.Context, chatID int64) (bool,
 func (s *ChatStorage) UpgradeWebhookAuth(ctx context.Context, chat *Chat) error {
 	key := &Chat{ChatID: chat.ChatID, BotType: chat.BotType}
 	return s.collection.Update(ctx, key, docstore.Mods{"webhook_auth": WebhookAuthUpgraded})
+}
+
+// ReissueWebhookURL gives the chat a new webhook URL issue time, which invalidates every previous URL of the bot in the chat,
+// makes the chat accept only URLs with a token, and returns the new issue time. It creates the record if the chat has none.
+// The new issue time is later than the previous one even within the same second, so that the new token differs.
+func (s *ChatStorage) ReissueWebhookURL(ctx context.Context, chatID int64, botType string) (int64, error) {
+	chat, err := s.GetOrCreateChat(ctx, chatID, botType)
+	if err != nil {
+		return 0, err
+	}
+
+	issuedAt := max(time.Now().Unix(), chat.WebhookIssuedAt+1)
+	mods := docstore.Mods{"webhook_issued_at": issuedAt}
+	if chat.WebhookAuth == WebhookAuthAny {
+		mods["webhook_auth"] = WebhookAuthUpgraded
+	}
+	key := &Chat{ChatID: chatID, BotType: botType}
+	if err := s.collection.Update(ctx, key, mods); err != nil {
+		return 0, err
+	}
+	return issuedAt, nil
 }
 
 // ClaimLegacyWarning reports whether the chat may be warned now about a rejected URL without a token, and records the warning if so.

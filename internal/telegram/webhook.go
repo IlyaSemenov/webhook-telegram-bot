@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"html"
 	"io"
 	"log"
 	"net/http"
@@ -15,16 +14,8 @@ import (
 
 	"webhook-telegram-bot/internal/storage"
 
-	"github.com/go-telegram/bot"
-	"github.com/go-telegram/bot/models"
 	"github.com/gorilla/mux"
 )
-
-// webhookURLNotice is the advice that the /webhook command shows with the URL.
-const webhookURLNotice = "Keep this URL private: anyone who has it can send messages to this chat."
-
-// webhookURLErrorText is the reply of the /webhook command when the URL cannot be issued.
-const webhookURLErrorText = "❌ Failed to get the webhook URL. Please try again later."
 
 // legacyWarningText is the warning about a rejected request to a URL without a token.
 const legacyWarningText = "⚠️ A webhook request with an outdated URL was rejected. " +
@@ -59,37 +50,19 @@ func createWebhookToken(secretKey string, botID string, chatID int64, issuedAt i
 	return base64.RawURLEncoding.EncodeToString(mac.Sum(nil)[:16])
 }
 
+// createWebhookURL returns the webhook URL of a chat issued at issuedAt.
+func (s *TelegramService) createWebhookURL(chatID int64, issuedAt int64) string {
+	token := createWebhookToken(s.secretKey, s.botId, chatID, issuedAt)
+	return fmt.Sprintf("%s/%s/%d/%s", s.baseURL, s.botId, chatID, token)
+}
+
 // getChatWebhookURL returns the webhook URL of the chat, creating the record of the chat if it has none.
 func (s *TelegramService) getChatWebhookURL(ctx context.Context, chatID int64) (string, error) {
 	chat, err := s.chatStorage.GetOrCreateChat(ctx, chatID, s.botId)
 	if err != nil {
 		return "", fmt.Errorf("failed to get the chat record: %w", err)
 	}
-	token := createWebhookToken(s.secretKey, s.botId, chatID, chat.WebhookIssuedAt)
-	return fmt.Sprintf("%s/%s/%d/%s", s.baseURL, s.botId, chatID, token), nil
-}
-
-// RegisterWebhookCommand registers the /webhook command, which replies with the webhook URL of the chat
-// followed by setupText, the HTML instructions for adding the URL to the source named sourceName.
-func (s *TelegramService) RegisterWebhookCommand(sourceName string, setupText string) {
-	s.RegisterCommandHandler("webhook", func(ctx context.Context, _ *bot.Bot, update *models.Update) {
-		s.sendWebhookURL(ctx, update.Message.Chat.ID, sourceName, setupText)
-	})
-}
-
-// sendWebhookURL sends the webhook URL of the chat with the setup instructions, or an error message if the URL cannot be issued.
-func (s *TelegramService) sendWebhookURL(ctx context.Context, chatID int64, sourceName string, setupText string) {
-	webhookURL, err := s.getChatWebhookURL(ctx, chatID)
-	if err != nil {
-		log.Printf("Failed to get %s webhook URL of chat %d: %v", s.botId, chatID, err)
-		s.SendMessageOrLogError(chatID, webhookURLErrorText)
-		return
-	}
-
-	text := fmt.Sprintf("🔗 <b>Your %s Webhook URL</b>\n\n<code>%s</code>\n\n", sourceName, html.EscapeString(webhookURL)) +
-		webhookURLNotice + "\n\n" +
-		setupText
-	s.SendMessageOrLogError(chatID, text)
+	return s.createWebhookURL(chatID, chat.WebhookIssuedAt), nil
 }
 
 // AuthorizeWebhook returns next wrapped in the check of the webhook URL, which has the chatID and the optional token route variables.

@@ -32,6 +32,7 @@ type chatStore interface {
 	GetOrCreateChat(ctx context.Context, chatID int64, botType string) (*storage.Chat, error)
 	CreateLegacyChat(ctx context.Context, chatID int64, botType string) (*storage.Chat, error)
 	UpgradeWebhookAuth(ctx context.Context, chat *storage.Chat) error
+	ReissueWebhookURL(ctx context.Context, chatID int64, botType string) (int64, error)
 	ClaimLegacyWarning(ctx context.Context, chat *storage.Chat, interval time.Duration) (bool, error)
 }
 
@@ -110,6 +111,13 @@ func (s *TelegramService) RegisterCommandHandler(command string, handler bot.Han
 		return false
 	}
 	s.bot.RegisterHandlerMatchFunc(matchFunc, handler)
+}
+
+// registerCallbackHandler registers a handler for presses of inline buttons with the callback data.
+func (s *TelegramService) registerCallbackHandler(data string, handler func(ctx context.Context, query *models.CallbackQuery)) {
+	s.bot.RegisterHandler(bot.HandlerTypeCallbackQueryData, data, bot.MatchTypeExact, func(ctx context.Context, _ *bot.Bot, update *models.Update) {
+		handler(ctx, update.CallbackQuery)
+	})
 }
 
 // StartBot starts a Telegram bot
@@ -213,6 +221,11 @@ func (s *TelegramService) SendMessageOrLogError(chatID int64, text string) {
 
 // SendMessageWithResult sends a message to a Telegram chat and returns the message info
 func (s *TelegramService) SendMessageWithResult(chatID int64, text string) (*models.Message, error) {
+	return s.sendMessage(chatID, text, nil)
+}
+
+// sendMessage sends a message with the optional reply markup to a Telegram chat, and records the delivery in the chat storage.
+func (s *TelegramService) sendMessage(chatID int64, text string, replyMarkup models.ReplyMarkup) (*models.Message, error) {
 	ctx := context.Background()
 	params := &bot.SendMessageParams{
 		ChatID:    chatID,
@@ -221,6 +234,7 @@ func (s *TelegramService) SendMessageWithResult(chatID int64, text string) (*mod
 		LinkPreviewOptions: &models.LinkPreviewOptions{
 			IsDisabled: bot.True(),
 		},
+		ReplyMarkup: replyMarkup,
 	}
 
 	msg, err := s.bot.SendMessage(ctx, params)
@@ -248,6 +262,11 @@ func (s *TelegramService) SendMessageWithResult(chatID int64, text string) (*mod
 
 // UpdateMessage updates an existing message in a Telegram chat
 func (s *TelegramService) UpdateMessage(chatID int64, messageID int, text string) error {
+	return s.updateMessage(chatID, messageID, text, nil)
+}
+
+// updateMessage replaces the text and the reply markup of an existing message in a Telegram chat; nil replyMarkup removes the buttons.
+func (s *TelegramService) updateMessage(chatID int64, messageID int, text string, replyMarkup models.ReplyMarkup) error {
 	ctx := context.Background()
 	params := &bot.EditMessageTextParams{
 		ChatID:    chatID,
@@ -257,10 +276,38 @@ func (s *TelegramService) UpdateMessage(chatID int64, messageID int, text string
 		LinkPreviewOptions: &models.LinkPreviewOptions{
 			IsDisabled: bot.True(),
 		},
+		ReplyMarkup: replyMarkup,
 	}
 
 	_, err := s.bot.EditMessageText(ctx, params)
 	return redactBotToken(err)
+}
+
+// updateReplyMarkup replaces the buttons of an existing message in a Telegram chat.
+func (s *TelegramService) updateReplyMarkup(chatID int64, messageID int, replyMarkup models.ReplyMarkup) error {
+	ctx := context.Background()
+	params := &bot.EditMessageReplyMarkupParams{
+		ChatID:      chatID,
+		MessageID:   messageID,
+		ReplyMarkup: replyMarkup,
+	}
+
+	_, err := s.bot.EditMessageReplyMarkup(ctx, params)
+	return redactBotToken(err)
+}
+
+// answerCallbackQuery stops the progress indicator of a pressed inline button, and shows alertText as an alert unless it is empty.
+func (s *TelegramService) answerCallbackQuery(queryID string, alertText string) {
+	ctx := context.Background()
+	params := &bot.AnswerCallbackQueryParams{
+		CallbackQueryID: queryID,
+		Text:            alertText,
+		ShowAlert:       alertText != "",
+	}
+
+	if _, err := s.bot.AnswerCallbackQuery(ctx, params); err != nil {
+		log.Printf("Failed to answer %s callback query: %v", s.botId, redactBotToken(err))
+	}
 }
 
 // isBotBlockedError checks if the error indicates the bot was blocked or removed

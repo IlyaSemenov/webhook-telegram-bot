@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"path"
 	"strings"
 	"testing"
 	"time"
@@ -41,10 +43,18 @@ func TestReadWebhookBody(t *testing.T) {
 	})
 }
 
-// telegramServer is a fake Telegram Bot API that records the texts of sent messages.
+// telegramRequest is a request to the fake Telegram Bot API.
+type telegramRequest struct {
+	method string
+	form   url.Values
+}
+
+// telegramServer is a fake Telegram Bot API that records requests and the texts of sent messages.
 type telegramServer struct {
 	*httptest.Server
-	sentTexts []string
+	requests   []telegramRequest
+	sentTexts  []string
+	failMethod string // Method that responds with an error
 }
 
 func newTelegramServer(t *testing.T) *telegramServer {
@@ -54,20 +64,33 @@ func newTelegramServer(t *testing.T) *telegramServer {
 		if err := r.ParseMultipartForm(1 << 20); err != nil {
 			t.Errorf("failed to parse Telegram request: %v", err)
 		}
-		server.sentTexts = append(server.sentTexts, r.FormValue("text"))
+		method := path.Base(r.URL.Path)
+		server.requests = append(server.requests, telegramRequest{method: method, form: r.MultipartForm.Value})
+		if method == "sendMessage" {
+			server.sentTexts = append(server.sentTexts, r.FormValue("text"))
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = w.Write([]byte(`{"ok":true,"result":{"message_id":1,"date":0,"chat":{"id":1,"type":"group"}}}`))
+		switch method {
+		case server.failMethod:
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"ok":false,"error_code":400,"description":"Bad Request: message can't be edited"}`))
+		case "answerCallbackQuery":
+			_, _ = w.Write([]byte(`{"ok":true,"result":true}`))
+		default:
+			_, _ = w.Write([]byte(`{"ok":true,"result":{"message_id":1,"date":0,"chat":{"id":1,"type":"group"}}}`))
+		}
 	}))
 	t.Cleanup(server.Close)
 	return server
 }
 
-// newWebhookService returns a service with chat storage over a new in-memory collection that sends messages to a fake Telegram Bot API,
-// and the collection for preparing records.
+// newWebhookService returns a service with chat storage over a new in-memory collection that sends messages to a fake Telegram Bot API
+// and handles updates synchronously, and the collection for preparing records.
 func newWebhookService(t *testing.T) (*TelegramService, *docstore.Collection, *telegramServer) {
 	t.Helper()
 	server := newTelegramServer(t)
-	telegramBot, err := bot.New(testBotToken, bot.WithSkipGetMe(), bot.WithServerURL(server.URL))
+	telegramBot, err := bot.New(testBotToken, bot.WithSkipGetMe(), bot.WithServerURL(server.URL), bot.WithNotAsyncHandlers())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -138,47 +161,6 @@ func TestGetChatWebhookURL(t *testing.T) {
 		}
 		if want := "https://bot.example.com/test/-100/" + createWebhookToken("secret", "test", -100, 0); webhookURL != want {
 			t.Errorf("URL = %q, want %q", webhookURL, want)
-		}
-	})
-}
-
-// failingGetStore is chat storage that fails to get or create the record of a chat.
-type failingGetStore struct {
-	*storage.ChatStorage
-}
-
-func (s failingGetStore) GetOrCreateChat(context.Context, int64, string) (*storage.Chat, error) {
-	return nil, errors.New("storage failure")
-}
-
-func TestSendWebhookURL(t *testing.T) {
-	ctx := context.Background()
-
-	t.Run("sends the URL with the setup instructions", func(t *testing.T) {
-		service, _, server := newWebhookService(t)
-		service.baseURL = "https://bot.example.com/a&b"
-
-		service.sendWebhookURL(ctx, -100, "Test", "<b>Setup</b>")
-
-		webhookURL, err := service.getChatWebhookURL(ctx, -100)
-		if err != nil {
-			t.Fatalf("unexpected error: %v", err)
-		}
-		escapedURL := strings.ReplaceAll(webhookURL, "&", "&amp;")
-		want := "🔗 <b>Your Test Webhook URL</b>\n\n<code>" + escapedURL + "</code>\n\n" + webhookURLNotice + "\n\n<b>Setup</b>"
-		if len(server.sentTexts) != 1 || server.sentTexts[0] != want {
-			t.Errorf("sent texts = %q, want [%q]", server.sentTexts, want)
-		}
-	})
-
-	t.Run("sends an error message if the URL cannot be issued", func(t *testing.T) {
-		service, collection, server := newWebhookService(t)
-		service.chatStorage = failingGetStore{storage.NewChatStorage(collection)}
-
-		service.sendWebhookURL(ctx, -100, "Test", "<b>Setup</b>")
-
-		if len(server.sentTexts) != 1 || server.sentTexts[0] != webhookURLErrorText {
-			t.Errorf("sent texts = %q, want [%q]", server.sentTexts, webhookURLErrorText)
 		}
 	})
 }

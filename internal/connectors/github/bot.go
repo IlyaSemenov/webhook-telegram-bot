@@ -61,7 +61,7 @@ var (
 		},
 		{
 			Command:     "webhook",
-			Description: "Get your unique GitHub webhook URL",
+			Description: "Get or reissue your unique GitHub webhook URL",
 		},
 	}
 )
@@ -91,7 +91,7 @@ func (s *GitHubTelegramService) handleHelpCommand(ctx context.Context, b *bot.Bo
 	text := "📚 <b>Available Commands</b>\n\n" +
 		"• /start - Start the bot\n" +
 		"• /help - Show this help message\n" +
-		"• /webhook - Get your unique GitHub webhook URL\n\n" +
+		"• /webhook - Get or reissue your unique GitHub webhook URL\n\n" +
 		"To set up webhooks, use the appropriate command and add the URL to your repository's webhook settings."
 
 	s.SendMessageOrLogError(update.Message.Chat.ID, text)

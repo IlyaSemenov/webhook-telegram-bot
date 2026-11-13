@@ -17,7 +17,7 @@ A connector consists of:
 
 - `internal/connectors/<source>/connector.go`: the token variable, the bot constructor, and the routes.
 - `internal/connectors/<source>/handler.go`: the `POST /<source>/{chatID}/{token}` endpoint that parses the request.
-- `internal/connectors/<source>/bot.go`: bot commands.
+- `internal/connectors/<source>/bot.go`: bot commands; register `/webhook` with `RegisterWebhookCommand`.
 - Event parsing and message formatting also live in `internal/connectors/<source>/`.
 
 Follow these boundaries:
@@ -30,7 +30,7 @@ Follow these boundaries:
   The token in a webhook URL is derived from `SECRET_KEY` and the URL issue time stored in `chats`, so changing `SECRET_KEY` invalidates every webhook URL.
 - Document only webhook URLs with a token in user-facing texts.
   The route without a token serves chats that used any bot before tokens.
-  Each bot stops accepting it in a chat after the first request with a valid token to that bot.
+  Each bot stops accepting it in a chat after the first request with a valid token to that bot or after the chat reissues the URL of that bot.
 - Treat the Privacy Policy in the README as a contract.
   Do not store payload content, names, or URLs; store hashes where a lookup needs a key.
   Update the policy whenever stored data changes.
@@ -54,7 +54,7 @@ Each binary runs as a long-lived process on Dokku or as an AWS Lambda when `AWS_
 
 - Pushing to `main` deploys to Dokku through `.github/workflows/deploy.yaml` when the repository variable `DEPLOY_DOKKU` is `true`.
 - Lambda freezes after the HTTP response, so finish all work before responding.
-  Telegram commands run in a background worker after the response and can be lost on Lambda.
+  Telegram commands and button presses run in a background worker after the response and can be lost on Lambda.
 - Keep storage code portable across the docstore drivers: MongoDB, DynamoDB, and in-memory.
   The MongoDB and in-memory docstore drivers have no sort keys, so `storage.Store` keys a collection with a sort key by a composite key.
   Opening such a MongoDB collection migrates documents stored before composite keys.

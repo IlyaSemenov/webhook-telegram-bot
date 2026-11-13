@@ -11,6 +11,8 @@ To connect a chat:
 
 The webhook URL contains a secret token of the chat.
 Keep the URL private: anyone who has it can send notifications to the chat through the bot.
+If the URL leaks, press **Reissue URL** under the reply to `/webhook` and confirm.
+All previous URLs of the bot in the chat then stop working, so replace the URL in every webhook that uses it.
 
 ## GitHub
 

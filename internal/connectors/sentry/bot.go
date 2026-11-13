@@ -61,7 +61,7 @@ var (
 		},
 		{
 			Command:     "webhook",
-			Description: "Get your unique Sentry webhook URL",
+			Description: "Get or reissue your unique Sentry webhook URL",
 		},
 	}
 )
@@ -89,7 +89,7 @@ func (s *SentryTelegramService) handleHelpCommand(ctx context.Context, b *bot.Bo
 	text := "📚 <b>Available Commands</b>\n\n" +
 		"• /start - Start the bot\n" +
 		"• /help - Show this help message\n" +
-		"• /webhook - Get your unique Sentry webhook URL\n\n" +
+		"• /webhook - Get or reissue your unique Sentry webhook URL\n\n" +
 		"To set up webhooks, use the /webhook command and add the URL to an internal integration in Sentry."
 
 	s.SendMessageOrLogError(update.Message.Chat.ID, text)

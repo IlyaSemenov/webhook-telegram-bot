@@ -257,6 +257,85 @@ func TestUpgradeWebhookAuth(t *testing.T) {
 	})
 }
 
+func TestReissueWebhookURL(t *testing.T) {
+	ctx := context.Background()
+
+	reissue := func(t *testing.T, chatStorage *ChatStorage, chatID int64, botType string) int64 {
+		t.Helper()
+		issuedAt, err := chatStorage.ReissueWebhookURL(ctx, chatID, botType)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if chat := getChat(t, chatStorage, chatID, botType); chat == nil || chat.WebhookIssuedAt != issuedAt {
+			t.Fatalf("chat = %+v, want a record with the returned issue time %d", chat, issuedAt)
+		}
+		return issuedAt
+	}
+
+	t.Run("creates a record in a chat without one", func(t *testing.T) {
+		chatStorage, _ := newChatStorage(t)
+
+		issuedAt := reissue(t, chatStorage, 1, "github")
+
+		// The record is created with the current time, which the reissue increments within the same second
+		if offset := issuedAt - time.Now().Unix(); offset < -60 || offset > 1 {
+			t.Errorf("issue time = %d, want about the current time", issuedAt)
+		}
+		if chat := getChat(t, chatStorage, 1, "github"); chat.WebhookAuth != WebhookAuthToken {
+			t.Errorf("WebhookAuth = %q, want %q", chat.WebhookAuth, WebhookAuthToken)
+		}
+	})
+
+	t.Run("issues a later time than the previous one within the same second", func(t *testing.T) {
+		chatStorage, collection := newChatStorage(t)
+		previous := time.Now().Unix() + 100
+		putChats(t, collection, &Chat{ChatID: 1, BotType: "github", WebhookAuth: WebhookAuthToken, WebhookIssuedAt: previous})
+
+		if issuedAt := reissue(t, chatStorage, 1, "github"); issuedAt != previous+1 {
+			t.Errorf("issue time = %d, want %d", issuedAt, previous+1)
+		}
+		if issuedAt := reissue(t, chatStorage, 1, "github"); issuedAt != previous+2 {
+			t.Errorf("second issue time = %d, want %d", issuedAt, previous+2)
+		}
+	})
+
+	t.Run("upgrades a record created before tokens", func(t *testing.T) {
+		chatStorage, collection := newChatStorage(t)
+		putLegacyChats(t, collection, legacyChat(1, "github"))
+
+		if issuedAt := reissue(t, chatStorage, 1, "github"); issuedAt == 0 {
+			t.Error("issue time = 0, want the current time")
+		}
+		if chat := getChat(t, chatStorage, 1, "github"); chat.WebhookAuth != WebhookAuthUpgraded {
+			t.Errorf("WebhookAuth = %q, want %q", chat.WebhookAuth, WebhookAuthUpgraded)
+		}
+	})
+
+	t.Run("creates an upgraded record in a chat with legacy history", func(t *testing.T) {
+		chatStorage, collection := newChatStorage(t)
+		putChats(t, collection, &Chat{ChatID: 1, BotType: "gitlab", WebhookAuth: WebhookAuthAny})
+
+		reissue(t, chatStorage, 1, "github")
+
+		if chat := getChat(t, chatStorage, 1, "github"); chat.WebhookAuth != WebhookAuthUpgraded {
+			t.Errorf("WebhookAuth = %q, want %q", chat.WebhookAuth, WebhookAuthUpgraded)
+		}
+	})
+
+	t.Run("keeps a record that accepts only URLs with a token", func(t *testing.T) {
+		for _, auth := range []string{WebhookAuthToken, WebhookAuthUpgraded} {
+			chatStorage, collection := newChatStorage(t)
+			putChats(t, collection, &Chat{ChatID: 1, BotType: "github", WebhookAuth: auth})
+
+			reissue(t, chatStorage, 1, "github")
+
+			if chat := getChat(t, chatStorage, 1, "github"); chat.WebhookAuth != auth {
+				t.Errorf("WebhookAuth = %q, want %q", chat.WebhookAuth, auth)
+			}
+		}
+	})
+}
+
 func TestClaimLegacyWarning(t *testing.T) {
 	ctx := context.Background()
 	const interval = 24 * time.Hour
