@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"webhook-telegram-bot/internal/storage"
 
@@ -23,12 +24,24 @@ type Settings struct {
 	SecretKey string
 }
 
+// chatStore is the chat storage that a Telegram service uses, implemented by storage.ChatStorage.
+type chatStore interface {
+	SaveChat(ctx context.Context, chat *storage.Chat) error
+	DeleteChat(ctx context.Context, chat *storage.Chat) error
+	GetChat(ctx context.Context, chatID int64, botType string) (*storage.Chat, error)
+	GetOrCreateChat(ctx context.Context, chatID int64, botType string) (*storage.Chat, error)
+	CreateLegacyChat(ctx context.Context, chatID int64, botType string) (*storage.Chat, error)
+	UpgradeWebhookAuth(ctx context.Context, chat *storage.Chat) error
+	ClaimLegacyWarning(ctx context.Context, chat *storage.Chat, interval time.Duration) (bool, error)
+}
+
 // TelegramService provides common functionality for Telegram bots
 type TelegramService struct {
 	botId              string // Internal bot ID (github or gitlab)
 	bot                *bot.Bot
-	chatStorage        *storage.ChatStorage
+	chatStorage        chatStore
 	baseURL            string
+	secretKey          string
 	webhookSecretToken string
 }
 
@@ -75,6 +88,7 @@ func NewTelegramService(botId string, token string, settings Settings, chatStora
 		botId:              botId,
 		chatStorage:        chatStorage,
 		baseURL:            settings.BaseURL,
+		secretKey:          settings.SecretKey,
 		webhookSecretToken: webhookSecretToken,
 	}, nil
 }
@@ -147,10 +161,6 @@ func (s *TelegramService) WebhookHandler() http.HandlerFunc {
 			log.Printf("Failed to encode response: %v", err)
 		}
 	}
-}
-
-func (s *TelegramService) GetChatWebhookURL(chatID int64) string {
-	return fmt.Sprintf("%s/%s/%d", s.baseURL, s.botId, chatID)
 }
 
 // SetCommands sets the list of available commands for the bot

@@ -16,7 +16,7 @@ Each source, such as GitHub or GitLab, is a connector and a separate Telegram bo
 A connector consists of:
 
 - `internal/connectors/<source>/connector.go`: the token variable, the bot constructor, and the routes.
-- `internal/connectors/<source>/handler.go`: the `POST /<source>/{chatID}` endpoint that parses the request.
+- `internal/connectors/<source>/handler.go`: the `POST /<source>/{chatID}/{token}` endpoint that parses the request.
 - `internal/connectors/<source>/bot.go`: bot commands.
 - Event parsing and message formatting also live in `internal/connectors/<source>/`.
 
@@ -26,6 +26,11 @@ Follow these boundaries:
   Move code that several connectors really share to `internal/telegram/`.
 - Keep source-specific concepts, such as branch filters, out of shared contracts.
   Each handler parses its own query parameters.
+- Wrap every webhook route in `AuthorizeWebhook`.
+  The token in a webhook URL is derived from `SECRET_KEY` and the URL issue time stored in `chats`, so changing `SECRET_KEY` invalidates every webhook URL.
+- Document only webhook URLs with a token in user-facing texts.
+  The route without a token serves chats that used any bot before tokens.
+  Each bot stops accepting it in a chat after the first request with a valid token to that bot.
 - Treat the Privacy Policy in the README as a contract.
   Do not store payload content, names, or URLs; store hashes where a lookup needs a key.
   Update the policy whenever stored data changes.
@@ -64,7 +69,7 @@ Connector tests are golden-file tests over `testdata/`:
 - Use `expect_no_output` in a fixture for an event that must not send a message.
 - Generate `.golden` files with `make test-update` instead of editing them by hand, and review their diff.
 
-MongoDB storage tests run only when `MONGO_TEST_URL` points to a disposable database; they drop its collection `test`.
+Storage tests use MongoDB only when `MONGO_TEST_URL` points to a disposable database, and then drop its collection `test`; otherwise they use the in-memory driver or are skipped.
 
 ## Commands
 

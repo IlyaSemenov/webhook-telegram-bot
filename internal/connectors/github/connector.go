@@ -24,6 +24,9 @@ func Connector() app.Connector {
 // Mount registers the GitHub webhook and Telegram bot webhook endpoints.
 func (s *GitHubTelegramService) Mount(router *mux.Router) {
 	handler := NewGitHubHandler(s, NewGitHubService(s))
-	router.HandleFunc("/"+botID+"/{chatID}", handler.HandleWebhook).Methods("POST")
+	webhook := s.AuthorizeWebhook(handler.HandleWebhook)
+	router.HandleFunc("/"+botID+"/{chatID}/{token}", webhook).Methods("POST")
+	// Legacy URLs remain available until this bot receives a valid token for the chat
+	router.HandleFunc("/"+botID+"/{chatID}", webhook).Methods("POST")
 	router.HandleFunc("/telegram/webhook/"+botID, s.WebhookHandler()).Methods("POST")
 }

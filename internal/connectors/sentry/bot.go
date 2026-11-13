@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"html"
+	"log"
 
 	"webhook-telegram-bot/internal/app"
 	"webhook-telegram-bot/internal/telegram"
@@ -84,9 +85,15 @@ func (s *SentryTelegramService) handleHelpCommand(ctx context.Context, b *bot.Bo
 }
 
 func (s *SentryTelegramService) handleWebhookCommand(ctx context.Context, b *bot.Bot, update *models.Update) {
-	webhookURL := s.GetChatWebhookURL(update.Message.Chat.ID)
+	webhookURL, err := s.GetChatWebhookURL(ctx, update.Message.Chat.ID)
+	if err != nil {
+		log.Printf("Failed to get webhook URL for chat %d: %v", update.Message.Chat.ID, err)
+		s.SendMessageOrLogError(update.Message.Chat.ID, telegram.WebhookURLErrorText)
+		return
+	}
 
 	text := fmt.Sprintf("🔗 <b>Your Sentry Webhook URL</b>\n\n<code>%s</code>\n\n", webhookURL) +
+		telegram.WebhookURLNotice + "\n\n" +
 		"<b>How to set up:</b>\n\n" +
 		"1. In Sentry, go to Settings → Developer Settings and create a new internal integration\n" +
 		"2. Paste the URL above in the 'Webhook URL' field\n" +

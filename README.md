@@ -9,7 +9,8 @@ To connect a chat:
 3. Add this URL to the source as described in [GitHub](#github), [GitLab](#gitlab), or [Sentry](#sentry).
 4. Events are now delivered to your Telegram chat.
 
-The bots do not verify webhook signatures or secret tokens, so the endpoints do not authenticate requests: anyone who knows the chat ID can send notifications to that chat through the bot.
+The webhook URL contains a secret token of the chat.
+Keep the URL private: anyone who has it can send notifications to the chat through the bot.
 
 ## GitHub
 
@@ -109,6 +110,9 @@ This bot is designed with privacy as a core principle. Here’s how data is hand
 
 - **Chat identifiers**:
   - Telegram chat IDs (numeric only) and timestamp of the last handled event
+  - Issue time of the chat's webhook URL; the secret token in the URL is derived from it and is not stored
+  - Kind of webhook URLs the chat accepts, and the time of the last warning about a rejected webhook URL
+  - A random revision marker that changes with every update of the record, to detect concurrent changes
   - Automatically removed if the bot is blocked by the chat
 - **GitLab pipeline tracking**:
   - SHA-256 hashes of pipeline identifiers (irreversible, cannot reveal original URLs)

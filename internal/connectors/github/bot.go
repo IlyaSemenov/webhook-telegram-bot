@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"html"
+	"log"
 
 	"webhook-telegram-bot/internal/app"
 	"webhook-telegram-bot/internal/telegram"
@@ -85,10 +86,16 @@ func (s *GitHubTelegramService) handleHelpCommand(ctx context.Context, b *bot.Bo
 
 // handleGitHubCommand handles the /github command
 func (s *GitHubTelegramService) handleWebhookCommand(ctx context.Context, b *bot.Bot, update *models.Update) {
-	webhookURL := s.GetChatWebhookURL(update.Message.Chat.ID)
+	webhookURL, err := s.GetChatWebhookURL(ctx, update.Message.Chat.ID)
+	if err != nil {
+		log.Printf("Failed to get webhook URL for chat %d: %v", update.Message.Chat.ID, err)
+		s.SendMessageOrLogError(update.Message.Chat.ID, telegram.WebhookURLErrorText)
+		return
+	}
 
 	// Create response message
 	text := fmt.Sprintf("🔗 <b>Your GitHub Webhook URL</b>\n\n<code>%s</code>\n\n", webhookURL) +
+		telegram.WebhookURLNotice + "\n\n" +
 		"<b>How to set up:</b>\n\n" +
 		"1. Go to your GitHub repository\n" +
 		"2. Click on Settings → Webhooks → Add webhook\n" +
