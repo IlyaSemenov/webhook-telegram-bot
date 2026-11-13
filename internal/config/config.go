@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/url"
 	"os"
 	"strings"
 
@@ -90,7 +89,7 @@ func Load() (*Config, error) {
 	var storageConnectionStringBase string
 	if mongoURL := os.Getenv("MONGO_URL"); mongoURL != "" {
 		// Running with MongoDB
-		storageConnectionStringBase = setupMongoEnvAndGetConnectionStringBase(mongoURL)
+		storageConnectionStringBase = mongoURL
 	} else if isLambda {
 		// Running in AWS - use DynamoDB
 		storageConnectionStringBase = fmt.Sprintf("dynamodb://%s", lambdaFunctionName)
@@ -103,26 +102,4 @@ func Load() (*Config, error) {
 		IsLambda:                    isLambda,
 		StorageConnectionStringBase: storageConnectionStringBase,
 	}, nil
-}
-
-// Due to MongoDB driver requirement, we need to set the MONGO_SERVER_URL env var.
-func setupMongoEnvAndGetConnectionStringBase(mongoURL string) string {
-	// Parse the URL to extract components.
-	u, err := url.Parse(mongoURL)
-	if err != nil {
-		log.Fatalf("Failed to parse MONGO_URL: %v", err)
-	}
-
-	// Extract db name from path (trim leading /).
-	dbName := strings.TrimPrefix(u.Path, "/")
-	if dbName == "" {
-		log.Fatal("MONGO_URL missing database name")
-	}
-
-	// Set the env var for the docstore mongo opener.
-	if err := os.Setenv("MONGO_SERVER_URL", mongoURL); err != nil {
-		log.Fatalf("Failed to set MONGO_SERVER_URL: %v", err)
-	}
-
-	return fmt.Sprintf("mongo://%s", dbName)
 }

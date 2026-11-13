@@ -21,16 +21,16 @@ type ChatStorage struct {
 	collection *docstore.Collection
 }
 
-// NewChatStorage creates a new chat storage instance
-func NewChatStorage(ctx context.Context, store *Store) (*ChatStorage, error) {
-	collection, err := store.OpenCollection(ctx, "chats", "chat_id", "bot_type")
-	if err != nil {
-		return nil, err
-	}
+// OpenChatCollection opens the collection of chats, keyed by the chat and the bot.
+func OpenChatCollection(ctx context.Context, store *Store) (*docstore.Collection, error) {
+	return store.OpenCollection(ctx, "chats", "chat_id", "bot_type")
+}
 
+// NewChatStorage creates chat storage over a collection opened by OpenChatCollection.
+func NewChatStorage(collection *docstore.Collection) *ChatStorage {
 	return &ChatStorage{
 		collection: collection,
-	}, nil
+	}
 }
 
 // SaveChat saves or updates a chat using update-or-create logic

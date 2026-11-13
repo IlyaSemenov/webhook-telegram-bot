@@ -51,6 +51,8 @@ Each binary runs as a long-lived process on Dokku or as an AWS Lambda when `AWS_
 - Lambda freezes after the HTTP response, so finish all work before responding.
   Telegram commands run in a background worker after the response and can be lost on Lambda.
 - Keep storage code portable across the docstore drivers: MongoDB, DynamoDB, and in-memory.
+  The MongoDB and in-memory docstore drivers have no sort keys, so `storage.Store` keys a collection with a sort key by a composite key.
+  Opening such a MongoDB collection migrates documents stored before composite keys.
 - Do not change `local.function_name` in `terraform/lambda.tf` for a live stack: it replaces the Lambda and its URL and recreates the DynamoDB tables empty.
 - Do not print or commit `terraform/*.tfvars` and Terraform state, which contain bot tokens and secrets.
 
@@ -61,6 +63,8 @@ Connector tests are golden-file tests over `testdata/`:
 - Add a `testdata/<name>.json` fixture for each new event or message variant; tests discover fixtures automatically.
 - Use `expect_no_output` in a fixture for an event that must not send a message.
 - Generate `.golden` files with `make test-update` instead of editing them by hand, and review their diff.
+
+MongoDB storage tests run only when `MONGO_TEST_URL` points to a disposable database; they drop its collection `test`.
 
 ## Commands
 

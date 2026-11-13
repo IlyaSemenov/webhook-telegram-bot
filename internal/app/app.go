@@ -103,10 +103,11 @@ func createBots(ctx context.Context, cfg *config.Config, connectors []Connector)
 	}
 
 	store := storage.NewStore(cfg.StorageConnectionStringBase)
-	chatStorage, err := storage.NewChatStorage(ctx, store)
+	chatCollection, err := storage.OpenChatCollection(ctx, store)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to initialize chat storage: %w", err)
 	}
+	chatStorage := storage.NewChatStorage(chatCollection)
 
 	settings := telegram.Settings{
 		BaseURL:   cfg.BaseURL,
