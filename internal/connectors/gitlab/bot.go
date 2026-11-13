@@ -36,7 +36,7 @@ func NewGitLabTelegramService(ctx context.Context, deps app.Deps) (*GitLabTelegr
 
 	s.RegisterCommandHandler("start", gs.handleStartCommand)
 	s.RegisterCommandHandler("help", gs.handleHelpCommand)
-	s.RegisterWebhookCommand(sourceName, webhookSetupText)
+	s.RegisterWebhookCommand(sourceName, webhookSetupText, formatAgentPrompt)
 
 	return gs, nil
 }
@@ -60,6 +60,17 @@ const webhookSetupText = "<b>How to set up:</b>\n\n" +
 	"<b>Optional parameters:</b>\n\n" +
 	"• <code>?project=1</code> — include project name in messages\n" +
 	"• <code>?branch=main&amp;branch=develop</code> — filter events by one or more branches"
+
+// formatAgentPrompt returns the prompt for an AI agent that adds the webhook URL to GitLab with the glab CLI, shown by the /webhook command.
+func formatAgentPrompt(webhookURL string) string {
+	return "Add a webhook to the GitLab project in the current directory with the glab CLI. " +
+		"If there is no project here, ask me which one to use.\n\n" +
+		"- URL: " + webhookURL + "\n" +
+		"- Triggers: push, issues, merge request, and pipeline events\n\n" +
+		"Before creating the webhook, ask me whether to add query parameters to the URL:\n" +
+		"- project=1 adds the project name to each message.\n" +
+		"- branch=<name> limits pushes, pipelines, and merge requests to this branch; repeat it for several branches."
+}
 
 var (
 	profileDescription = "Monitors GitLab repo activity via webhooks and sends updates to Telegram."

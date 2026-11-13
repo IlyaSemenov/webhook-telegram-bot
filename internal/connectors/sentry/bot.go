@@ -28,7 +28,7 @@ func NewSentryTelegramService(_ context.Context, deps app.Deps) (*SentryTelegram
 
 	s.RegisterCommandHandler("start", ss.handleStartCommand)
 	s.RegisterCommandHandler("help", ss.handleHelpCommand)
-	s.RegisterWebhookCommand(sourceName, webhookSetupText)
+	s.RegisterWebhookCommand(sourceName, webhookSetupText, formatAgentPrompt)
 
 	return ss, nil
 }
@@ -46,6 +46,19 @@ const webhookSetupText = "<b>How to set up:</b>\n\n" +
 	"To receive issue state changes instead of alerts, by default for all projects, set the 'Issue &amp; Event' permission to Read and subscribe to the 'issue' webhook.\n\n" +
 	"<b>Optional parameters:</b>\n\n" +
 	"• <code>?project=1</code> — include project name in messages"
+
+// formatAgentPrompt returns the prompt for an AI agent that adds the webhook URL to Sentry with the sentry CLI, shown by the /webhook command.
+func formatAgentPrompt(webhookURL string) string {
+	return "Create an internal integration in my Sentry organization with the sentry CLI. " +
+		"If the organization is unclear, ask me which one to use.\n\n" +
+		"- Webhook URL: " + webhookURL + "\n" +
+		"- Alert Rule Action: on\n\n" +
+		"Ask me what to deliver:\n" +
+		"- Alerts: add an action that sends a notification via this integration to the alert rules I choose.\n" +
+		"- Issue state changes in all projects: set the Issue & Event permission to Read and subscribe to the issue webhook.\n\n" +
+		"Before creating the integration, ask me whether to add the query parameter project=1 to the URL, " +
+		"which adds the project slug to each message."
+}
 
 var (
 	profileDescription = "Sends Sentry alerts and issue updates to Telegram via webhooks."

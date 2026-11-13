@@ -26,7 +26,7 @@ func NewGitHubTelegramService(_ context.Context, deps app.Deps) (*GitHubTelegram
 
 	s.RegisterCommandHandler("start", gs.handleStartCommand)
 	s.RegisterCommandHandler("help", gs.handleHelpCommand)
-	s.RegisterWebhookCommand(sourceName, webhookSetupText)
+	s.RegisterWebhookCommand(sourceName, webhookSetupText, formatAgentPrompt)
 
 	return gs, nil
 }
@@ -46,6 +46,18 @@ const webhookSetupText = "<b>How to set up:</b>\n\n" +
 	"<b>Optional parameters:</b>\n\n" +
 	"• <code>?project=1</code> — include project name in messages\n" +
 	"• <code>?branch=main&amp;branch=develop</code> — filter events by one or more branches"
+
+// formatAgentPrompt returns the prompt for an AI agent that adds the webhook URL to GitHub with the gh CLI, shown by the /webhook command.
+func formatAgentPrompt(webhookURL string) string {
+	return "Add a webhook to the GitHub repository in the current directory with the gh CLI. " +
+		"If there is no repository here, ask me which one to use.\n\n" +
+		"- Payload URL: " + webhookURL + "\n" +
+		"- Content type: application/json\n" +
+		"- Events: push, workflow_run\n\n" +
+		"Before creating the webhook, ask me whether to add query parameters to the URL:\n" +
+		"- project=1 adds the repository name to each message.\n" +
+		"- branch=<name> limits pushes and workflow runs to this branch; repeat it for several branches."
+}
 
 var (
 	profileDescription = "Monitors GitHub repo activity via webhooks and sends updates to Telegram."

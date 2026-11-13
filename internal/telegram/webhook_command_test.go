@@ -28,12 +28,17 @@ func (s failingChatStore) ReissueWebhookURL(context.Context, int64, string) (int
 	return 0, errors.New("storage failure")
 }
 
+// formatTestAgentPrompt returns the prompt for an AI agent of the source Test.
+func formatTestAgentPrompt(webhookURL string) string {
+	return "Add <" + webhookURL + ">"
+}
+
 // newWebhookCommand returns a service from newWebhookService with the /webhook command of the source Test,
 // the collection for preparing records, and the fake Telegram Bot API that the service uses.
 func newWebhookCommand(t *testing.T) (*TelegramService, *docstore.Collection, *telegramServer) {
 	t.Helper()
 	service, collection, server := newWebhookService(t)
-	service.RegisterWebhookCommand("Test", "<b>Setup</b>")
+	service.RegisterWebhookCommand("Test", "<b>Setup</b>", formatTestAgentPrompt)
 	return service, collection, server
 }
 
@@ -123,7 +128,7 @@ func checkButtons(t *testing.T, request telegramRequest, data ...string) {
 }
 
 func TestWebhookCommand(t *testing.T) {
-	t.Run("replies with the URL, the setup instructions, and the reissue button", func(t *testing.T) {
+	t.Run("replies with the URL, the setup instructions, the agent prompt, and the reissue button", func(t *testing.T) {
 		service, _, server := newWebhookCommand(t)
 		service.baseURL = "https://bot.example.com/a&b"
 
@@ -134,7 +139,8 @@ func TestWebhookCommand(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		checkRequests(t, server, "sendMessage")
-		want := "🔗 <b>Your Test Webhook URL</b>\n\n<code>" + html.EscapeString(webhookURL) + "</code>\n\n" + webhookURLNotice + "\n\n<b>Setup</b>"
+		want := "🔗 <b>Your Test Webhook URL</b>\n\n<code>" + html.EscapeString(webhookURL) + "</code>\n\n" + webhookURLNotice + "\n\n<b>Setup</b>\n\n" +
+			agentPromptHeading + "\n\n<pre>Add &lt;" + html.EscapeString(webhookURL) + "&gt;</pre>"
 		if got := server.requests[0].form.Get("text"); got != want {
 			t.Errorf("text = %q, want %q", got, want)
 		}
@@ -181,7 +187,7 @@ func TestWebhookCommandReissue(t *testing.T) {
 
 	// getReissuedText returns the reply with the URL of the chat issued at issuedAt after a reissue.
 	getReissuedText := func(service *TelegramService, issuedAt int64) string {
-		command := &webhookCommand{service: service, sourceName: "Test", setupText: "<b>Setup</b>"}
+		command := &webhookCommand{service: service, sourceName: "Test", setupText: "<b>Setup</b>", formatAgentPrompt: formatTestAgentPrompt}
 		return reissuedText + "\n\n" + command.formatText(service.createWebhookURL(-100, issuedAt))
 	}
 

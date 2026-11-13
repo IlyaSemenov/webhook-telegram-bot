@@ -7,6 +7,7 @@ To connect a chat:
 1. Add the bot to your Telegram chat: [@github_watch_bot](https://t.me/github_watch_bot) for GitHub, [@gitlab_watch_bot](https://t.me/gitlab_watch_bot) for GitLab, or [@getsentry_bot](https://t.me/getsentry_bot) for Sentry.
 2. Use the `/webhook` command to get the webhook URL of the chat.
 3. Add this URL to the source as described in [GitHub](#github), [GitLab](#gitlab), or [Sentry](#sentry).
+   Alternatively, give the prompt from the reply to an AI agent that can use the `gh`, `glab`, or `sentry` CLI.
 4. Events are now delivered to your Telegram chat.
 
 The webhook URL contains a secret token of the chat.

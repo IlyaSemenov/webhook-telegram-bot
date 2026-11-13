@@ -14,6 +14,9 @@ import (
 const webhookURLNotice = "Keep this URL private: anyone who has it can send messages to this chat. " +
 	"If it leaks, reissue it with the button below."
 
+// agentPromptHeading is the heading of the prompt for an AI agent in the /webhook reply, which follows the setup instructions.
+const agentPromptHeading = "<b>Or ask an AI agent:</b>"
+
 // webhookURLErrorText is the reply of the /webhook command when the URL cannot be issued.
 const webhookURLErrorText = "❌ Failed to get the webhook URL. Please try again later."
 
@@ -54,13 +57,17 @@ type webhookCommand struct {
 	service    *TelegramService
 	sourceName string // Name of the source in the reply
 	setupText  string // HTML instructions for adding the URL to the source
+
+	// formatAgentPrompt returns the plain-text prompt for an AI agent that adds the URL to the source.
+	formatAgentPrompt func(webhookURL string) string
 }
 
 // RegisterWebhookCommand registers the /webhook command, which replies with the webhook URL of the chat
-// followed by setupText, the HTML instructions for adding the URL to the source named sourceName.
+// followed by setupText, the HTML instructions for adding the URL to the source named sourceName,
+// and by the plain-text prompt that formatAgentPrompt returns for an AI agent that adds the URL to the source.
 // The button under the reply reissues the URL after a confirmation.
-func (s *TelegramService) RegisterWebhookCommand(sourceName string, setupText string) {
-	c := &webhookCommand{service: s, sourceName: sourceName, setupText: setupText}
+func (s *TelegramService) RegisterWebhookCommand(sourceName string, setupText string, formatAgentPrompt func(webhookURL string) string) {
+	c := &webhookCommand{service: s, sourceName: sourceName, setupText: setupText, formatAgentPrompt: formatAgentPrompt}
 	s.RegisterCommandHandler("webhook", func(ctx context.Context, _ *bot.Bot, update *models.Update) {
 		c.sendWebhookURL(ctx, update.Message.Chat.ID)
 	})
@@ -73,7 +80,9 @@ func (s *TelegramService) RegisterWebhookCommand(sourceName string, setupText st
 func (c *webhookCommand) formatText(webhookURL string) string {
 	return fmt.Sprintf("🔗 <b>Your %s Webhook URL</b>\n\n<code>%s</code>\n\n", c.sourceName, html.EscapeString(webhookURL)) +
 		webhookURLNotice + "\n\n" +
-		c.setupText
+		c.setupText + "\n\n" +
+		agentPromptHeading + "\n\n" +
+		"<pre>" + html.EscapeString(c.formatAgentPrompt(webhookURL)) + "</pre>"
 }
 
 // sendWebhookURL sends the webhook URL of the chat with the setup instructions, or an error message if the URL cannot be issued.
