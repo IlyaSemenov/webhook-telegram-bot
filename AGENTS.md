@@ -69,7 +69,7 @@ Connector tests are golden-file tests over `testdata/`:
 - Use `expect_no_output` in a fixture for an event that must not send a message.
 - Generate `.golden` files with `make test-update` instead of editing them by hand, and review their diff.
 
-Storage tests use MongoDB only when `MONGO_TEST_URL` points to a disposable database, and then drop its collection `test`; otherwise they use the in-memory driver or are skipped.
+Storage tests use MongoDB only when `MONGO_TEST_URL` points to a disposable database, and then drop its collections `test` and `pipelines`; otherwise they use the in-memory driver or are skipped.
 
 ## Commands
 

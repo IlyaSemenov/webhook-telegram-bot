@@ -195,6 +195,41 @@ func TestOpenCollectionMongo(t *testing.T) {
 	})
 }
 
+// TestExpireDocumentsMongo runs against the MongoDB database in MONGO_TEST_URL, dropping its collection "test", and is skipped without it.
+func TestExpireDocumentsMongo(t *testing.T) {
+	mongoURL := os.Getenv("MONGO_TEST_URL")
+	if mongoURL == "" {
+		t.Skip("MONGO_TEST_URL is not set")
+	}
+	ctx := context.Background()
+	m := newMongoCollection(t, mongoURL)
+
+	// Expiring twice checks that creating the index is idempotent
+	for range 2 {
+		if err := m.store.ExpireDocuments(ctx, "test", "updated_at", time.Hour); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	}
+
+	cursor, err := m.collection.Indexes().List(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	var indexes []bson.M
+	if err := cursor.All(ctx, &indexes); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for _, index := range indexes {
+		if index["name"] == "updated_at_1" {
+			if seconds, _ := index["expireAfterSeconds"].(int32); seconds != 3600 {
+				t.Errorf("expireAfterSeconds = %v, want 3600", index["expireAfterSeconds"])
+			}
+			return
+		}
+	}
+	t.Errorf("indexes = %v, want a TTL index on updated_at", indexes)
+}
+
 // mongoCollection is a store and the raw MongoDB collection "test" that its collections use.
 type mongoCollection struct {
 	store      *Store

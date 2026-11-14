@@ -7,9 +7,11 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"gocloud.dev/docstore"
 	_ "gocloud.dev/docstore/awsdynamodb"
 	"gocloud.dev/docstore/driver"
@@ -43,7 +45,7 @@ func (s *Store) OpenCollection(ctx context.Context, collectionName string, keyFi
 		}
 		return docstore.OpenCollection(ctx, connectionString)
 
-	case strings.HasPrefix(base, "mongodb://") || strings.HasPrefix(base, "mongodb+srv://"):
+	case isMongoURL(base):
 		return s.openMongoCollection(ctx, collectionName, keyField, sortKey)
 
 	case base == "":
@@ -55,6 +57,31 @@ func (s *Store) OpenCollection(ctx context.Context, collectionName string, keyFi
 	default:
 		return nil, fmt.Errorf("unsupported storage connection string %q", base)
 	}
+}
+
+// ExpireDocuments makes MongoDB delete documents of the collection once the time in timeField is older than ttl.
+// DynamoDB tables expire documents by the TTL attribute that Terraform configures, and the in-memory driver keeps documents until the process exits.
+func (s *Store) ExpireDocuments(ctx context.Context, collectionName string, timeField string, ttl time.Duration) error {
+	if !isMongoURL(s.connectionStringBase) {
+		return nil
+	}
+	database, err := s.connectMongo(ctx)
+	if err != nil {
+		return err
+	}
+	index := mongo.IndexModel{
+		Keys:    bson.D{{Key: timeField, Value: 1}},
+		Options: options.Index().SetExpireAfterSeconds(int32(ttl.Seconds())),
+	}
+	if _, err := database.Collection(collectionName).Indexes().CreateOne(ctx, index); err != nil {
+		return fmt.Errorf("failed to create TTL index of MongoDB collection %s: %w", collectionName, err)
+	}
+	return nil
+}
+
+// isMongoURL reports whether the connection string base is a MongoDB URL.
+func isMongoURL(base string) bool {
+	return strings.HasPrefix(base, "mongodb://") || strings.HasPrefix(base, "mongodb+srv://")
 }
 
 // openMongoCollection opens a MongoDB collection, whose _id is keyField or the composite key of keyField and sortKey.

@@ -23,6 +23,9 @@ type Pipeline struct {
 	ExpiresAt         int64     `docstore:"expires_at"` // TTL timestamp in epoch seconds
 }
 
+// pipelineRetention is how long a pipeline record lives after its last update.
+const pipelineRetention = 24 * time.Hour
+
 // PipelineStorage handles pipeline persistence
 type PipelineStorage struct {
 	collection *docstore.Collection
@@ -32,6 +35,9 @@ type PipelineStorage struct {
 func NewPipelineStorage(ctx context.Context, store *storage.Store) (*PipelineStorage, error) {
 	collection, err := store.OpenCollection(ctx, "pipelines", "pipeline_update_key", "")
 	if err != nil {
+		return nil, err
+	}
+	if err := store.ExpireDocuments(ctx, "pipelines", "updated_at", pipelineRetention); err != nil {
 		return nil, err
 	}
 
@@ -54,7 +60,7 @@ func (s *PipelineStorage) SavePipeline(ctx context.Context, pipeline *Pipeline) 
 		pipeline.CreatedAt = now
 	}
 	pipeline.UpdatedAt = now
-	pipeline.ExpiresAt = now.Add(time.Hour * 24).Unix()
+	pipeline.ExpiresAt = now.Add(pipelineRetention).Unix()
 	return s.collection.Put(ctx, pipeline)
 }
 

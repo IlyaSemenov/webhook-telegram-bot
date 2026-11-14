@@ -2,10 +2,76 @@ package telegram
 
 import (
 	"context"
+	"net/url"
+	"os"
+	"strings"
 	"testing"
 
 	"webhook-telegram-bot/internal/storage"
+
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+// TestNewPipelineStorageMongo runs against the MongoDB database in MONGO_TEST_URL, dropping its collection "pipelines", and is skipped without it.
+func TestNewPipelineStorageMongo(t *testing.T) {
+	mongoURL := os.Getenv("MONGO_TEST_URL")
+	if mongoURL == "" {
+		t.Skip("MONGO_TEST_URL is not set")
+	}
+	ctx := context.Background()
+
+	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURL))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	t.Cleanup(func() { _ = client.Disconnect(ctx) })
+	u, err := url.Parse(mongoURL)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	collection := client.Database(strings.TrimPrefix(u.Path, "/")).Collection("pipelines")
+	if err := collection.Drop(ctx); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	pipelineStorage, err := NewPipelineStorage(ctx, storage.NewStore(mongoURL))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if err := pipelineStorage.SavePipeline(ctx, &Pipeline{PipelineUpdateKey: "key", MessageID: 1}); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	// MongoDB expires documents only by a date field
+	count, err := collection.CountDocuments(ctx, bson.M{"updated_at": bson.M{"$type": "date"}})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if count != 1 {
+		t.Errorf("documents with a date in updated_at = %d, want 1", count)
+	}
+
+	cursor, err := collection.Indexes().List(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	var indexes []bson.M
+	if err := cursor.All(ctx, &indexes); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	for _, index := range indexes {
+		if index["name"] == "updated_at_1" {
+			// The Privacy Policy promises 24 hours
+			if seconds, _ := index["expireAfterSeconds"].(int32); seconds != 86400 {
+				t.Errorf("expireAfterSeconds = %v, want 86400", index["expireAfterSeconds"])
+			}
+			return
+		}
+	}
+	t.Errorf("indexes = %v, want a TTL index on updated_at", indexes)
+}
 
 func TestCreatePipelineUpdateKey(t *testing.T) {
 	t.Run("produces deterministic hash", func(t *testing.T) {
