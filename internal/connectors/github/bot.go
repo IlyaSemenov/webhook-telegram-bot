@@ -12,16 +12,23 @@ import (
 
 type GitHubTelegramService struct {
 	*telegram.TelegramService
+	*telegram.PipelineMessenger
 }
 
-func NewGitHubTelegramService(_ context.Context, deps app.Deps) (*GitHubTelegramService, error) {
+func NewGitHubTelegramService(ctx context.Context, deps app.Deps) (*GitHubTelegramService, error) {
 	s, err := telegram.NewTelegramService(botID, deps.Token, deps.Settings, deps.ChatStorage)
 	if err != nil {
 		return nil, err
 	}
 
+	pipelineMessenger, err := telegram.NewPipelineMessenger(ctx, s, deps.Store)
+	if err != nil {
+		return nil, err
+	}
+
 	gs := &GitHubTelegramService{
-		TelegramService: s,
+		TelegramService:   s,
+		PipelineMessenger: pipelineMessenger,
 	}
 
 	s.RegisterCommandHandler("start", gs.handleStartCommand)

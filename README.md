@@ -31,8 +31,9 @@ GitHub then sends a ping, and the chat receives a confirmation message.
 
 - Ping: confirmation with the repository link
 - Push: author, branch, and commits, or a force push or branch deletion notice
-- Completed workflow run: workflow link and result
+- Workflow run: workflow link and status
 
+The bot sends one message per workflow run and updates it as the status changes.
 Skipped workflow runs send no message.
 
 ### URL Parameters
@@ -117,14 +118,15 @@ This bot is designed with privacy as a core principle. Here’s how data is hand
   - Kind of webhook URLs the chat accepts, and the time of the last warning about a rejected webhook URL
   - A random revision marker that changes with every update of the record, to detect concurrent changes
   - Automatically removed if the bot is blocked by the chat
-- **GitLab pipeline tracking**:
-  - SHA-256 hashes of pipeline identifiers (irreversible, cannot reveal original URLs)
+- **GitLab pipeline and GitHub workflow run tracking**:
+  - SHA-256 hashes of pipeline and workflow run identifiers (irreversible, cannot reveal original URLs)
   - Associated Telegram message IDs (for updating status messages)
-  - Automatically purged after 24 hours of pipeline inactivity
+  - Whether a GitHub workflow run has finished
+  - Automatically purged after 24 hours of inactivity
 
 **Explicitly NOT stored:**
 
-- Repository/pipeline URLs (only hashes)
+- Repository, pipeline, and workflow run URLs (only hashes)
 - Names of users, organizations, or repositories
 - Commit messages, code content, or file changes
 - Sentry event data, such as error messages, stack traces, request data, and user data
@@ -134,7 +136,7 @@ This bot is designed with privacy as a core principle. Here’s how data is hand
 **Data flow**:
 
 1. Webhook events are processed in real-time (never persisted)
-2. Pipeline URLs are instantly hashed for status updates
+2. Pipeline and workflow run URLs are instantly hashed for status updates
 3. Only necessary notification content is forwarded to Telegram
    - Sentry titles contain error messages, so an application that puts personal data in its errors also sends it to the chat
 4. No message content remains in the system after delivery
@@ -142,7 +144,7 @@ This bot is designed with privacy as a core principle. Here’s how data is hand
 **Retention rules**:
 
 - Most data: Purged immediately after processing
-- Pipeline tracking: Purged after 24 hours of inactivity
+- Pipeline and workflow run tracking: Purged after 24 hours of inactivity
 - All chat data: Removed when the bot is blocked
 
 This is a privacy-focused relay bot that retains only the minimal data required for functionality.

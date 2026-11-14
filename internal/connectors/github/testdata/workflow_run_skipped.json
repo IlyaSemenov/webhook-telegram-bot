@@ -1,6 +1,8 @@
 {
   "event_type": "workflow_run",
-  "expect_no_output": true,
+  "is_pipeline": true,
+  "final": true,
+  "update_only": true,
   "payload": {
     "action": "completed",
     "repository": {

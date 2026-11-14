@@ -6,11 +6,18 @@ import (
 	"webhook-telegram-bot/internal/telegram"
 )
 
-type GitHubService struct {
-	telegramSvc telegram.MessageSender
+// PipelineMessageSender extends telegram.MessageSender with workflow run message updates.
+type PipelineMessageSender interface {
+	telegram.MessageSender
+	SendOrUpdatePipelineMessage(chatID int64, pipelineURL string, text string, final bool) error
+	FinishPipelineMessage(chatID int64, pipelineURL string, text string) error
 }
 
-func NewGitHubService(telegramSvc telegram.MessageSender) *GitHubService {
+type GitHubService struct {
+	telegramSvc PipelineMessageSender
+}
+
+func NewGitHubService(telegramSvc PipelineMessageSender) *GitHubService {
 	return &GitHubService{
 		telegramSvc: telegramSvc,
 	}

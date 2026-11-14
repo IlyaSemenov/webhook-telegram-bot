@@ -2,16 +2,16 @@
   "event_type": "workflow_run",
   "expect_no_output": true,
   "payload": {
-    "action": "started",
+    "action": "requested",
     "repository": {
       "full_name": "owner/repo",
       "html_url": "https://github.com/owner/repo"
     },
     "workflow_run": {
-      "conclusion": "",
+      "conclusion": null,
       "html_url": "https://github.com/owner/repo/actions/runs/1",
       "name": "CI",
-      "status": "in_progress"
+      "status": "queued"
     }
   }
 }

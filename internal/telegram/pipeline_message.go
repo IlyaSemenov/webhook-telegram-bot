@@ -22,36 +22,57 @@ func NewPipelineMessenger(ctx context.Context, s *TelegramService, store *storag
 	return &PipelineMessenger{telegram: s, storage: pipelineStorage}, nil
 }
 
-// SendOrUpdatePipelineMessage updates an existing pipeline message or creates a new one
-func (m *PipelineMessenger) SendOrUpdatePipelineMessage(chatID int64, pipelineURL string, text string) error {
+// SendOrUpdatePipelineMessage sends a pipeline message or edits the existing one unless it already shows the final status.
+// Set final for the text of the final status, so that events delivered out of order do not replace it.
+func (m *PipelineMessenger) SendOrUpdatePipelineMessage(chatID int64, pipelineURL string, text string, final bool) error {
+	return m.sendOrUpdatePipelineMessage(chatID, pipelineURL, text, final, false)
+}
+
+// FinishPipelineMessage edits an existing pipeline message to the final status unless it already shows one.
+// Without a message, it sends nothing and keeps later events from sending one.
+func (m *PipelineMessenger) FinishPipelineMessage(chatID int64, pipelineURL string, text string) error {
+	return m.sendOrUpdatePipelineMessage(chatID, pipelineURL, text, true, true)
+}
+
+// sendOrUpdatePipelineMessage edits an existing pipeline message unless it already shows the final status,
+// or sends a new one unless updateOnly is set, which requires final.
+func (m *PipelineMessenger) sendOrUpdatePipelineMessage(chatID int64, pipelineURL string, text string, final bool, updateOnly bool) error {
 	ctx := context.Background()
 	pipelineUpdateKey := CreatePipelineUpdateKey(pipelineURL, chatID)
 
-	// Get existing pipeline mapping
 	pipeline, err := m.storage.GetPipeline(ctx, pipelineUpdateKey)
 	if err != nil {
 		return err
 	}
 
 	if pipeline == nil {
-		// Pipeline not found, send new message
+		if updateOnly {
+			// Replace the lock that GetPipeline created with a record that keeps a later event from reporting an earlier status
+			return m.storage.SavePipeline(ctx, &Pipeline{PipelineUpdateKey: pipelineUpdateKey, Final: final})
+		}
+
 		msg, err := m.telegram.SendMessageWithResult(chatID, text)
 		if err != nil {
 			return err
 		}
 
-		// Store pipeline mapping
 		pipeline := &Pipeline{
 			PipelineUpdateKey: pipelineUpdateKey,
 			MessageID:         msg.ID,
+			Final:             final,
 		}
-		return m.storage.SavePipeline(ctx, pipeline)
-	} else {
-		// Update the existing message
-		if err := m.telegram.UpdateMessage(chatID, pipeline.MessageID, text); err != nil {
-			return err
-		}
-		// Update the mapping timestamp
 		return m.storage.SavePipeline(ctx, pipeline)
 	}
+
+	// An event delivered after the final one must not replace the final status or report an earlier one;
+	// events handled concurrently with the final one can still do so
+	if pipeline.Final {
+		return nil
+	}
+
+	if err := m.telegram.UpdateMessage(chatID, pipeline.MessageID, text); err != nil {
+		return err
+	}
+	pipeline.Final = final
+	return m.storage.SavePipeline(ctx, pipeline)
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 
 	"github.com/sebdah/goldie/v2"
@@ -11,9 +12,10 @@ import (
 
 const chatID int64 = 123456789
 
-// mockMessageSender captures sent messages for testing
-type mockMessageSender struct {
-	sentMessages []sentMessage
+// mockPipelineMessageSender captures sent messages for testing
+type mockPipelineMessageSender struct {
+	sentMessages     []sentMessage
+	pipelineMessages []pipelineMessage
 }
 
 type sentMessage struct {
@@ -21,13 +23,32 @@ type sentMessage struct {
 	text   string
 }
 
-func (m *mockMessageSender) SendMessage(chatID int64, text string) error {
+// pipelineMessage is a call that sends or updates a workflow run message.
+type pipelineMessage struct {
+	chatID      int64
+	pipelineURL string
+	text        string
+	final       bool
+	updateOnly  bool
+}
+
+func (m *mockPipelineMessageSender) SendMessage(chatID int64, text string) error {
 	m.sentMessages = append(m.sentMessages, sentMessage{chatID: chatID, text: text})
 	return nil
 }
 
-func newService() (*GitHubService, *mockMessageSender) {
-	mock := &mockMessageSender{}
+func (m *mockPipelineMessageSender) SendOrUpdatePipelineMessage(chatID int64, pipelineURL string, text string, final bool) error {
+	m.pipelineMessages = append(m.pipelineMessages, pipelineMessage{chatID: chatID, pipelineURL: pipelineURL, text: text, final: final})
+	return nil
+}
+
+func (m *mockPipelineMessageSender) FinishPipelineMessage(chatID int64, pipelineURL string, text string) error {
+	m.pipelineMessages = append(m.pipelineMessages, pipelineMessage{chatID: chatID, pipelineURL: pipelineURL, text: text, final: true, updateOnly: true})
+	return nil
+}
+
+func newService() (*GitHubService, *mockPipelineMessageSender) {
+	mock := &mockPipelineMessageSender{}
 	return NewGitHubService(mock), mock
 }
 
@@ -36,6 +57,9 @@ type fixture struct {
 	EventType      string                 `json:"event_type"`
 	BranchFilters  []string               `json:"branch_filters,omitempty"`
 	IncludeProject bool                   `json:"include_project,omitempty"`
+	IsPipeline     bool                   `json:"is_pipeline,omitempty"`
+	Final          bool                   `json:"final,omitempty"`
+	UpdateOnly     bool                   `json:"update_only,omitempty"`
 	ExpectNoOutput bool                   `json:"expect_no_output,omitempty"`
 	Payload        map[string]interface{} `json:"payload"`
 }
@@ -87,21 +111,79 @@ func TestGitHubEvents(t *testing.T) {
 			}
 
 			if f.ExpectNoOutput {
-				if len(mock.sentMessages) != 0 {
-					t.Errorf("expected no output, got: %q", mock.sentMessages[0].text)
+				if len(mock.sentMessages) != 0 || len(mock.pipelineMessages) != 0 {
+					t.Errorf("expected no output, got sent=%d pipeline=%d",
+						len(mock.sentMessages), len(mock.pipelineMessages))
 				}
 				return
 			}
 
-			if len(mock.sentMessages) != 1 {
-				t.Fatalf("expected 1 message, got %d", len(mock.sentMessages))
-			}
-			if mock.sentMessages[0].chatID != chatID {
-				t.Errorf("chatID = %d, want %d", mock.sentMessages[0].chatID, chatID)
+			var actual string
+			if f.IsPipeline {
+				if len(mock.sentMessages) != 0 || len(mock.pipelineMessages) != 1 {
+					t.Fatalf("expected 1 pipeline message, got sent=%d pipeline=%d",
+						len(mock.sentMessages), len(mock.pipelineMessages))
+				}
+				message := mock.pipelineMessages[0]
+				if message.chatID != chatID {
+					t.Errorf("chatID = %d, want %d", message.chatID, chatID)
+				}
+				if message.final != f.Final || message.updateOnly != f.UpdateOnly {
+					t.Errorf("final = %v, updateOnly = %v, want %v, %v", message.final, message.updateOnly, f.Final, f.UpdateOnly)
+				}
+				actual = message.text
+			} else {
+				if len(mock.sentMessages) != 1 || len(mock.pipelineMessages) != 0 {
+					t.Fatalf("expected 1 message, got sent=%d pipeline=%d",
+						len(mock.sentMessages), len(mock.pipelineMessages))
+				}
+				if mock.sentMessages[0].chatID != chatID {
+					t.Errorf("chatID = %d, want %d", mock.sentMessages[0].chatID, chatID)
+				}
+				actual = mock.sentMessages[0].text
 			}
 
-			goldie.New(t).Assert(t, name, []byte(mock.sentMessages[0].text))
+			goldie.New(t).Assert(t, name, []byte(actual))
 		})
+	}
+}
+
+func TestWorkflowRunMessageURL(t *testing.T) {
+	// Events of one run attempt must pass the same URL so that the real implementation updates one Telegram message,
+	// and a re-run must pass another URL so that it gets a new message.
+	svc, mock := newService()
+
+	handle := func(action string, attempt int) {
+		t.Helper()
+		payload, _ := json.Marshal(map[string]any{
+			"action": action,
+			"workflow_run": map[string]any{
+				"name":        "CI",
+				"html_url":    "https://github.com/owner/repo/actions/runs/1",
+				"run_attempt": attempt,
+				"conclusion":  "success",
+			},
+		})
+		if err := svc.HandleEvent(chatID, "workflow_run", payload, nil, false); err != nil {
+			t.Fatalf("HandleEvent error: %v", err)
+		}
+	}
+
+	handle("in_progress", 1)
+	handle("completed", 1)
+	handle("in_progress", 2)
+
+	var urls []string
+	for _, message := range mock.pipelineMessages {
+		urls = append(urls, message.pipelineURL)
+	}
+	want := []string{
+		"https://github.com/owner/repo/actions/runs/1/attempts/1",
+		"https://github.com/owner/repo/actions/runs/1/attempts/1",
+		"https://github.com/owner/repo/actions/runs/1/attempts/2",
+	}
+	if !slices.Equal(urls, want) {
+		t.Errorf("pipeline URLs = %q, want %q", urls, want)
 	}
 }
 

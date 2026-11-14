@@ -27,6 +27,7 @@ type pipelineMessage struct {
 	chatID      int64
 	pipelineURL string
 	text        string
+	final       bool
 }
 
 func (m *mockPipelineMessageSender) SendMessage(chatID int64, text string) error {
@@ -34,8 +35,8 @@ func (m *mockPipelineMessageSender) SendMessage(chatID int64, text string) error
 	return nil
 }
 
-func (m *mockPipelineMessageSender) SendOrUpdatePipelineMessage(chatID int64, pipelineURL string, text string) error {
-	m.pipelineMessages = append(m.pipelineMessages, pipelineMessage{chatID: chatID, pipelineURL: pipelineURL, text: text})
+func (m *mockPipelineMessageSender) SendOrUpdatePipelineMessage(chatID int64, pipelineURL string, text string, final bool) error {
+	m.pipelineMessages = append(m.pipelineMessages, pipelineMessage{chatID: chatID, pipelineURL: pipelineURL, text: text, final: final})
 	return nil
 }
 
@@ -115,6 +116,10 @@ func TestGitLabEvents(t *testing.T) {
 				}
 				if mock.pipelineMessages[0].chatID != chatID {
 					t.Errorf("chatID = %d, want %d", mock.pipelineMessages[0].chatID, chatID)
+				}
+				// A retried job reopens a finished pipeline, so no status is final
+				if mock.pipelineMessages[0].final {
+					t.Error("final = true, want false")
 				}
 				actual = mock.pipelineMessages[0].text
 			} else {

@@ -16,7 +16,8 @@ import (
 // Pipeline represents a CI pipeline with its associated Telegram message
 type Pipeline struct {
 	PipelineUpdateKey string    `docstore:"pipeline_update_key"` // Partition Key (S) - hash of pipeline URL + chat ID
-	MessageID         int       `docstore:"message_id"`          // Telegram message ID
+	MessageID         int       `docstore:"message_id"`          // Telegram message ID; 0 for a lock or for a final status reported without a message
+	Final             bool      `docstore:"final,omitempty"`     // The pipeline reached its final status, which later events do not replace
 	CreatedAt         time.Time `docstore:"created_at"`
 	UpdatedAt         time.Time `docstore:"updated_at"`
 	ExpiresAt         int64     `docstore:"expires_at"` // TTL timestamp in epoch seconds
@@ -81,7 +82,7 @@ func (s *PipelineStorage) GetPipeline(ctx context.Context, pipelineUpdateKey str
 		// Try to fetch the pipeline
 		err := s.collection.Get(ctx, pipeline)
 		if err == nil {
-			if pipeline.MessageID != 0 {
+			if pipeline.MessageID != 0 || pipeline.Final {
 				// Valid record found
 				return pipeline, nil
 			}

@@ -192,6 +192,6 @@ func (s *GitLabService) handlePipelineEvent(chatID int64, payload []byte, branch
 	// Get pipeline URL for updating existing messages
 	pipelineURL := event.ObjectAttributes.URL
 
-	// Try to update existing message or create new one
-	return s.telegramSvc.SendOrUpdatePipelineMessage(chatID, pipelineURL, message.String())
+	// A retried job reopens a finished pipeline, so no status is final
+	return s.telegramSvc.SendOrUpdatePipelineMessage(chatID, pipelineURL, message.String(), false)
 }

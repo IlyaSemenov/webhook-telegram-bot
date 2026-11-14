@@ -1,0 +1,17 @@
+{
+  "event_type": "workflow_run",
+  "is_pipeline": true,
+  "payload": {
+    "action": "in_progress",
+    "repository": {
+      "full_name": "owner/repo",
+      "html_url": "https://github.com/owner/repo"
+    },
+    "workflow_run": {
+      "conclusion": null,
+      "html_url": "https://github.com/owner/repo/actions/runs/1",
+      "name": "CI",
+      "status": "in_progress"
+    }
+  }
+}

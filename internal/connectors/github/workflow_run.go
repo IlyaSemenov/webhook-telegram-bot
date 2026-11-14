@@ -16,6 +16,7 @@ func (s *GitHubService) handleWorkflowRunEvent(chatID int64, payload []byte, bra
 		WorkflowRun struct {
 			Name       string `json:"name"`
 			HTMLURL    string `json:"html_url"`
+			RunAttempt int    `json:"run_attempt"`
 			Status     string `json:"status"`
 			Conclusion string `json:"conclusion"`
 			HeadBranch string `json:"head_branch"`
@@ -30,13 +31,8 @@ func (s *GitHubService) handleWorkflowRunEvent(chatID int64, payload []byte, bra
 		return err
 	}
 
-	// Only notify on completed workflow runs
-	if event.Action != "completed" {
-		return nil
-	}
-
-	// A skipped run did nothing, so there is nothing to report
-	if event.WorkflowRun.Conclusion == "skipped" {
+	// Report runs that started and completed; a requested run may wait for a runner and may be skipped
+	if event.Action != "in_progress" && event.Action != "completed" {
 		return nil
 	}
 
@@ -48,17 +44,24 @@ func (s *GitHubService) handleWorkflowRunEvent(chatID int64, payload []byte, bra
 	// Build message
 	var message strings.Builder
 
-	// Add emoji based on conclusion
-	var emoji string
-	switch event.WorkflowRun.Conclusion {
-	case "success":
-		emoji = "✅"
-	case "failure":
-		emoji = "❌"
-	case "cancelled":
-		emoji = "💨"
-	default:
-		emoji = "❔"
+	var emoji, status string
+	if event.Action == "in_progress" {
+		emoji = "▶️"
+		status = "in progress"
+	} else {
+		switch event.WorkflowRun.Conclusion {
+		case "success":
+			emoji = "✅"
+		case "failure":
+			emoji = "❌"
+		case "cancelled":
+			emoji = "💨"
+		case "skipped":
+			emoji = "➖"
+		default:
+			emoji = "❔"
+		}
+		status = event.WorkflowRun.Conclusion
 	}
 
 	message.WriteString(emoji + " ")
@@ -69,8 +72,19 @@ func (s *GitHubService) handleWorkflowRunEvent(chatID int64, payload []byte, bra
 	message.WriteString(fmt.Sprintf(
 		"%s %s.",
 		telegram.FormatLink(event.WorkflowRun.HTMLURL, html.EscapeString(event.WorkflowRun.Name)),
-		html.EscapeString(event.WorkflowRun.Conclusion),
+		html.EscapeString(status),
 	))
 
-	return s.telegramSvc.SendMessage(chatID, message.String())
+	// Each attempt of a re-run gets its own message
+	attemptURL := fmt.Sprintf("%s/attempts/%d", event.WorkflowRun.HTMLURL, event.WorkflowRun.RunAttempt)
+
+	switch {
+	case event.Action == "in_progress":
+		return s.telegramSvc.SendOrUpdatePipelineMessage(chatID, attemptURL, message.String(), false)
+	case event.WorkflowRun.Conclusion == "skipped":
+		// A skipped run did nothing, so only a message about its start is updated
+		return s.telegramSvc.FinishPipelineMessage(chatID, attemptURL, message.String())
+	default:
+		return s.telegramSvc.SendOrUpdatePipelineMessage(chatID, attemptURL, message.String(), true)
+	}
 }

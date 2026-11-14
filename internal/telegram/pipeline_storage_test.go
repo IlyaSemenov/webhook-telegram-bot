@@ -1,7 +1,10 @@
 package telegram
 
 import (
+	"context"
 	"testing"
+
+	"webhook-telegram-bot/internal/storage"
 )
 
 func TestCreatePipelineUpdateKey(t *testing.T) {
@@ -43,4 +46,28 @@ func TestCreatePipelineUpdateKey(t *testing.T) {
 			t.Errorf("empty inputs should still produce a key")
 		}
 	})
+}
+
+func TestSavePipeline(t *testing.T) {
+	ctx := context.Background()
+	pipelineStorage, err := NewPipelineStorage(ctx, storage.NewStore(""))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	for _, final := range []bool{false, true} {
+		key := CreatePipelineUpdateKey(testPipelineURL, 1)
+		if err := pipelineStorage.SavePipeline(ctx, &Pipeline{PipelineUpdateKey: key, MessageID: 1, Final: final}); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		// Versions before the final flag fail to read a record with a field they do not know
+		record := map[string]any{"pipeline_update_key": key}
+		if err := pipelineStorage.collection.Get(ctx, record); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if _, ok := record["final"]; ok != final {
+			t.Errorf("Final = %v: field stored = %v, want %v", final, ok, final)
+		}
+	}
 }

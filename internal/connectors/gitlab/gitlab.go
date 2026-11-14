@@ -9,7 +9,7 @@ import (
 // PipelineMessageSender extends telegram.MessageSender with pipeline message update support.
 type PipelineMessageSender interface {
 	telegram.MessageSender
-	SendOrUpdatePipelineMessage(chatID int64, pipelineURL string, text string) error
+	SendOrUpdatePipelineMessage(chatID int64, pipelineURL string, text string, final bool) error
 }
 
 type GitLabService struct {

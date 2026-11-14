@@ -1,5 +1,7 @@
 {
   "event_type": "workflow_run",
+  "is_pipeline": true,
+  "final": true,
   "payload": {
     "action": "completed",
     "workflow_run": {
