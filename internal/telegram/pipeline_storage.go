@@ -1,4 +1,4 @@
-package gitlab
+package telegram
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"gocloud.dev/gcerrors"
 )
 
-// Pipeline represents a GitLab pipeline with its associated Telegram message
+// Pipeline represents a CI pipeline with its associated Telegram message
 type Pipeline struct {
 	PipelineUpdateKey string    `docstore:"pipeline_update_key"` // Partition Key (S) - hash of pipeline URL + chat ID
 	MessageID         int       `docstore:"message_id"`          // Telegram message ID

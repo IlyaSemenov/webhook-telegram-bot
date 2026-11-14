@@ -2,7 +2,6 @@ package gitlab
 
 import (
 	"context"
-	"fmt"
 
 	"webhook-telegram-bot/internal/app"
 	"webhook-telegram-bot/internal/telegram"
@@ -14,7 +13,7 @@ import (
 // GitLabTelegramService is a Telegram service for GitLab notifications
 type GitLabTelegramService struct {
 	*telegram.TelegramService
-	pipelineStorage *PipelineStorage
+	*telegram.PipelineMessenger
 }
 
 // NewGitLabTelegramService creates a new GitLab Telegram service
@@ -24,14 +23,14 @@ func NewGitLabTelegramService(ctx context.Context, deps app.Deps) (*GitLabTelegr
 		return nil, err
 	}
 
-	pipelineStorage, err := NewPipelineStorage(ctx, deps.Store)
+	pipelineMessenger, err := telegram.NewPipelineMessenger(ctx, s, deps.Store)
 	if err != nil {
-		return nil, fmt.Errorf("failed to initialize pipeline storage: %w", err)
+		return nil, err
 	}
 
 	gs := &GitLabTelegramService{
-		TelegramService: s,
-		pipelineStorage: pipelineStorage,
+		TelegramService:   s,
+		PipelineMessenger: pipelineMessenger,
 	}
 
 	s.RegisterCommandHandler("start", gs.handleStartCommand)
@@ -120,38 +119,4 @@ func (s *GitLabTelegramService) handleHelpCommand(ctx context.Context, b *bot.Bo
 		"To set up webhooks, use the appropriate command and add the URL to your repository's webhook settings."
 
 	s.SendMessageOrLogError(update.Message.Chat.ID, text)
-}
-
-// SendOrUpdatePipelineMessage updates an existing pipeline message or creates a new one
-func (s *GitLabTelegramService) SendOrUpdatePipelineMessage(chatID int64, pipelineURL string, text string) error {
-	ctx := context.Background()
-	pipelineUpdateKey := CreatePipelineUpdateKey(pipelineURL, chatID)
-
-	// Get existing pipeline mapping
-	pipeline, err := s.pipelineStorage.GetPipeline(ctx, pipelineUpdateKey)
-	if err != nil {
-		return err
-	}
-
-	if pipeline == nil {
-		// Pipeline not found, send new message
-		msg, err := s.SendMessageWithResult(chatID, text)
-		if err != nil {
-			return err
-		}
-
-		// Store pipeline mapping
-		pipeline := &Pipeline{
-			PipelineUpdateKey: pipelineUpdateKey,
-			MessageID:         msg.ID,
-		}
-		return s.pipelineStorage.SavePipeline(ctx, pipeline)
-	} else {
-		// Update the existing message
-		if err := s.UpdateMessage(chatID, pipeline.MessageID, text); err != nil {
-			return err
-		}
-		// Update the mapping timestamp
-		return s.pipelineStorage.SavePipeline(ctx, pipeline)
-	}
 }

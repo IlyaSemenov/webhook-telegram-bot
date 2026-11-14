@@ -20,13 +20,13 @@ func TestNewGitLabTelegramService(t *testing.T) {
 		}
 	})
 
-	t.Run("opens pipeline storage", func(t *testing.T) {
+	t.Run("creates the pipeline messenger", func(t *testing.T) {
 		svc, err := NewGitLabTelegramService(ctx, app.Deps{Token: "test-token", Store: storage.NewStore("")})
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if svc.pipelineStorage == nil {
-			t.Errorf("pipeline storage is nil")
+		if svc.PipelineMessenger == nil {
+			t.Errorf("pipeline messenger is nil")
 		}
 	})
 }
